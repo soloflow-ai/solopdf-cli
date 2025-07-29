@@ -9,7 +9,8 @@
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "ci": "pnpm lint && pnpm test && pnpm build"
   },
   "keywords": [],
   "author": "",
