@@ -1,8 +1,11 @@
 # Dependencies
-/node_modules
+**/node_modules
+**/.pnpm-store
 
 # Build output
-/dist
+**/dist
+**/build
+**/lib
 
 # Logs
 npm-debug.log*
@@ -11,4 +14,43 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Test coverage
-/coverage
+**/coverage
+
+# Rust artifacts
+**/target
+**/*.node
+**/Cargo.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# TypeScript build info
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Jest coverage
+coverage/
+
+# PNPM specific
+.pnpm-debug.log*
+
