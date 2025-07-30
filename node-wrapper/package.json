@@ -1,20 +1,53 @@
 {
   "name": "solopdf-cli",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A fast PDF manipulation CLI tool powered by Rust and Node.js",
+  "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "solopdf": "./dist/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "../rust-core/index.node",
+    "../rust-core/target/release/*.node",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "dev": "ts-node src/index.ts",
-    "ci": "pnpm lint && pnpm test && pnpm build"
+    "ci": "pnpm lint && pnpm test && pnpm build",
+    "clean": "rimraf dist",
+    "prepublishOnly": "pnpm clean && pnpm ci",
+    "postbuild": "chmod +x dist/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "pdf",
+    "cli",
+    "pdf-manipulation",
+    "rust",
+    "napi",
+    "fast",
+    "pdf-tools",
+    "command-line"
+  ],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soloflow-ai/solopdf-cli.git",
+    "directory": "node-wrapper"
+  },
+  "bugs": {
+    "url": "https://github.com/soloflow-ai/solopdf-cli/issues"
+  },
+  "homepage": "https://github.com/soloflow-ai/solopdf-cli#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -24,9 +57,13 @@
     "eslint-config-prettier": "^10.1.8",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.0"
   }
 }

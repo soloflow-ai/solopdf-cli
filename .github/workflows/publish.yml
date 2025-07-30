@@ -1,0 +1,75 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty for current package.json version)'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish Package
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10.13.1"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "pnpm"
+          cache-dependency-path: "node-wrapper/pnpm-lock.yaml"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Build Rust core
+        working-directory: rust-core
+        run: |
+          cargo build --release
+          # Copy the built .node file to a predictable location
+          if [ -f "target/release/librust_core.so" ]; then
+            cp target/release/librust_core.so index.node
+          elif [ -f "target/release/rust_core.node" ]; then
+            cp target/release/rust_core.node index.node
+          fi
+
+      - name: Install Node.js dependencies
+        working-directory: node-wrapper
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        working-directory: node-wrapper
+        run: pnpm test
+
+      - name: Build Node.js package
+        working-directory: node-wrapper
+        run: pnpm build
+
+      - name: Publish to NPM
+        working-directory: node-wrapper
+        run: pnpm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-package
+          path: |
+            node-wrapper/dist/
+            rust-core/index.node

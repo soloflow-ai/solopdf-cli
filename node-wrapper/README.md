@@ -1,12 +1,40 @@
-# SoloPDF 📄✨
+# SoloPDF CLI 📄✨
 
-The ultimate open-source tool for all your PDF needs. Create, modify, and interact with PDFs effortlessly. Built in public, for the public.
+A blazingly fast PDF manipulation CLI tool powered by Rust and Node.js.
 
------
+## Features
 
-## 🌟 About SoloPDF
+- 🚀 **Ultra-fast**: Core operations powered by Rust for maximum performance
+- 📄 **PDF Analysis**: Get page counts and basic PDF information  
+- 🔧 **Easy to Use**: Simple command-line interface
+- 🌐 **Cross-platform**: Works on Linux, macOS, and Windows
 
-SoloPDF is an ambitious **open-source** project aimed at creating a powerful, intuitive, and comprehensive command-line and programmatic tool for PDF manipulation. In a world with many PDF libraries, SoloPDF stands out by prioritizing **developer experience** and modern standards. Inspired by the robustness of tools like `pdfcpu`, SoloPDF is designed from the ground up with modern development practices, written entirely in **TypeScript**, and built for the **Node.js ecosystem**.
+## Installation
+
+```bash
+npm install -g solopdf-cli
+```
+
+or with pnpm:
+
+```bash
+pnpm install -g solopdf-cli
+```
+
+## Usage
+
+### Get Page Count
+
+```bash
+solopdf pages document.pdf
+```
+
+This will quickly analyze the PDF and return the number of pages.
+
+## Requirements
+
+- Node.js 18.0.0 or higher
+- The Rust core is pre-compiled and included in the package
 
 Our goal is to build a tool that is not only feature-rich but also incredibly easy to integrate into your projects or use directly from the terminal. We are building this project in the open, sharing our progress, and we welcome contributors of all levels to join us on this journey to build the best PDF tool available.
 

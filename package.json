@@ -1,0 +1,30 @@
+{
+  "name": "solopdf-cli-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SoloPDF CLI - A fast PDF manipulation tool with Rust core and Node.js wrapper",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soloflow-ai/solopdf-cli.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter=solopdf-cli build",
+    "test": "pnpm --filter=solopdf-cli test",
+    "lint": "pnpm --filter=solopdf-cli lint",
+    "format": "pnpm --filter=solopdf-cli format",
+    "clean": "pnpm --filter=solopdf-cli clean && cd rust-core && cargo clean",
+    "build:rust": "cd rust-core && cargo build --release",
+    "build:all": "pnpm build:rust && pnpm build",
+    "prepublishOnly": "pnpm build:all"
+  },
+  "workspaces": [
+    "node-wrapper"
+  ]
+}

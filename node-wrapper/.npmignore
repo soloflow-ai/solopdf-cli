@@ -1,0 +1,46 @@
+# Source files (only include built dist)
+src/
+tests/
+*.test.ts
+*.test.js
+
+# Development files
+.eslintrc*
+eslint.config.*
+jest.config.*
+tsconfig.json
+prettier.config.*
+
+# Build artifacts (except dist)
+node_modules/
+coverage/
+.nyc_output/
+
+# Development logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git*
+
+# CI files
+.github/
+
+# Only include specific Rust artifacts
+../rust-core/target/
+../rust-core/src/
+../rust-core/Cargo.*
+!../rust-core/index.node
+!../rust-core/target/release/*.node

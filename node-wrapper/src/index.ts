@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import path from 'path';
-import { getPageCount } from '../../rust-core/index';
+import { getPageCount } from '../../rust-core/index.js';
 const program = new Command();
 
 program
