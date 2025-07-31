@@ -21,7 +21,7 @@
     "dev": "ts-node src/index.ts",
     "ci": "pnpm lint && pnpm test && pnpm build",
     "clean": "rimraf dist",
-    "prepublishOnly": "pnpm clean && pnpm ci",
+    "prepublishOnly": "pnpm clean && pnpm run ci",
     "postbuild": "chmod +x dist/index.js"
   },
   "keywords": [
