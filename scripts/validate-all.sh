@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -e  # Commented out to see where failures occur
+set -e
 
 echo "🚀 Running SoloPDF CLI validation tests..."
 

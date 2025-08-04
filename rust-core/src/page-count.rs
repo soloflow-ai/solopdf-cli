@@ -5,7 +5,12 @@ pub fn get_page_count(file_path: String) -> Result<u32> {
     let doc = lopdf::Document::load(file_path);
     let document = match doc {
         Ok(document) => document,
-        Err(e) => return Err(napi::Error::new(napi::Status::GenericFailure, e.to_string())),
+        Err(e) => {
+            return Err(napi::Error::new(
+                napi::Status::GenericFailure,
+                e.to_string(),
+            ))
+        }
     };
     // Get the number of pages in the document.
     let page_count = document.get_pages().len() as u32;
@@ -15,7 +20,9 @@ pub fn get_page_count(file_path: String) -> Result<u32> {
 }
 
 // Internal version for testing that returns standard Result
-pub fn get_page_count_internal(file_path: String) -> std::result::Result<u32, Box<dyn std::error::Error>> {
+pub fn get_page_count_internal(
+    file_path: String,
+) -> std::result::Result<u32, Box<dyn std::error::Error>> {
     let doc = lopdf::Document::load(file_path)?;
     let page_count = doc.get_pages().len() as u32;
     Ok(page_count)
@@ -33,7 +40,7 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path().to_string_lossy().to_string();
         doc.save(&path).unwrap();
-        
+
         let result = get_page_count_internal(path);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 1);
@@ -45,7 +52,7 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path().to_string_lossy().to_string();
         doc.save(&path).unwrap();
-        
+
         let result = get_page_count_internal(path);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 3);
