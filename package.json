@@ -1,6 +1,6 @@
 {
   "name": "solopdf-cli",
-  "version": "0.0.2-alpha",
+  "version": "0.0.3-alpha",
   "description": "SoloPDF CLI - A fast PDF manipulation tool with Rust core and Node.js wrapper",
   "repository": {
     "type": "git",
@@ -13,6 +13,15 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
+  "keywords": [
+    "pdf",
+    "cli",
+    "pdf-manipulation",
+    "rust",
+    "napi",
+    "fast",
+    "pdf-tools"
+  ],
   "scripts": {
     "build": "pnpm --filter=solopdf-cli build",
     "test": "pnpm --filter=solopdf-cli test",

@@ -1,6 +1,6 @@
 {
   "name": "solopdf-cli",
-  "version": "0.0.2-alpha",
+  "version": "3-alpha",
   "description": "A fast PDF manipulation CLI tool powered by Rust and Node.js",
   "main": "dist/index.js",
   "type": "module",

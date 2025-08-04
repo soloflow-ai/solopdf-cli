@@ -54,3 +54,5 @@ coverage/
 # PNPM specific
 .pnpm-debug.log*
 
+# Bin
+**/bin
