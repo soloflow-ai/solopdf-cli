@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create output directory if it doesn't exist
     fs::create_dir_all(output_dir)?;
 
-    println!("Generating test PDFs in directory: {}", output_dir);
+    println!("Generating test PDFs in directory: {output_dir}");
 
     // Generate various test PDFs
     let test_cases = vec![
@@ -112,7 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for (page_count, name, content) in test_cases {
-        let file_path = Path::new(output_dir).join(format!("{}.pdf", name));
+        let file_path = Path::new(output_dir).join(format!("{name}.pdf"));
 
         println!(
             "Creating {} with {} page(s)...",

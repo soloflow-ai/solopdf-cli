@@ -28,7 +28,7 @@ pub fn sign_pdf(file_path: String, signature_text: String) -> Result<()> {
     let mut document = lopdf::Document::load(&file_path).map_err(|e| {
         napi::Error::new(
             napi::Status::GenericFailure,
-            format!("Failed to load PDF: {}", e),
+            format!("Failed to load PDF: {e}"),
         )
     })?;
 
@@ -77,17 +77,15 @@ pub fn sign_pdf(file_path: String, signature_text: String) -> Result<()> {
     let acroform_id = document.add_object(acroform);
 
     // Add AcroForm to the catalog
-    if let Ok(catalog) = document.get_object_mut((1, 0)) {
-        if let lopdf::Object::Dictionary(catalog_dict) = catalog {
-            catalog_dict.set("AcroForm", lopdf::Object::Reference(acroform_id));
-        }
+    if let Ok(lopdf::Object::Dictionary(catalog_dict)) = document.get_object_mut((1, 0)) {
+        catalog_dict.set("AcroForm", lopdf::Object::Reference(acroform_id));
     }
 
     // Save the modified document back to the original file path.
     document.save(&file_path).map_err(|e| {
         napi::Error::new(
             napi::Status::GenericFailure,
-            format!("Failed to save PDF: {}", e),
+            format!("Failed to save PDF: {e}"),
         )
     })?;
 
@@ -148,10 +146,8 @@ pub fn sign_pdf_internal(
     let acroform_id = document.add_object(acroform);
 
     // Add AcroForm to the catalog
-    if let Ok(catalog) = document.get_object_mut((1, 0)) {
-        if let lopdf::Object::Dictionary(catalog_dict) = catalog {
-            catalog_dict.set("AcroForm", lopdf::Object::Reference(acroform_id));
-        }
+    if let Ok(lopdf::Object::Dictionary(catalog_dict)) = document.get_object_mut((1, 0)) {
+        catalog_dict.set("AcroForm", lopdf::Object::Reference(acroform_id));
     }
 
     // Save the modified document
