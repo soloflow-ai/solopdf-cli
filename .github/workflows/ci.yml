@@ -2,9 +2,12 @@ name: SoloPDF CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "develop"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "develop"]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   rust-core:
@@ -19,6 +22,7 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
+          components: rustfmt, clippy
 
       - name: Setup Node.js (for NAPI)
         uses: actions/setup-node@v4
@@ -36,17 +40,43 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - name: Check Rust formatting
+        working-directory: rust-core
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        working-directory: rust-core
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
       - name: Check Rust code
         working-directory: rust-core
         run: cargo check
 
-      - name: Test Rust core
+      - name: Run Rust unit tests
         working-directory: rust-core
-        run: cargo test
+        run: cargo test --verbose
 
-      - name: Build NAPI addon
+      - name: Run Rust integration tests with sample PDFs
+        working-directory: rust-core
+        run: cargo test integration_tests --verbose
+
+      - name: Build NAPI addon (debug)
+        working-directory: rust-core
+        run: cargo build
+
+      - name: Build NAPI addon (release)
         working-directory: rust-core
         run: cargo build --release
+
+      - name: Build NAPI module
+        working-directory: rust-core
+        run: npx napi build --release
+
+      - name: Generate test PDFs
+        working-directory: rust-core
+        run: |
+          mkdir -p ../executed/generated-pdfs
+          cargo run --bin generate_test_pdfs -- ../executed/generated-pdfs
 
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
@@ -56,7 +86,15 @@ jobs:
             rust-core/target/release/librust_core.so
             rust-core/target/release/rust_core.node
             rust-core/index.node
+            rust-core/index.js
           if-no-files-found: ignore
+
+      - name: Upload generated PDFs
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-test-pdfs
+          path: executed/generated-pdfs/
+          retention-days: 7
 
   node-wrapper:
     runs-on: ubuntu-latest
@@ -83,23 +121,61 @@ jobs:
         working-directory: node-wrapper
         run: pnpm install --frozen-lockfile
 
+      - name: Download Rust artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rust-core-build
+          path: rust-core/
+
+      - name: Setup test environment
+        run: node scripts/setup-execution-env.mjs
+
       - name: Run linter
         working-directory: node-wrapper
         run: pnpm lint
 
-      - name: Run tests
+      - name: Run unit tests
         working-directory: node-wrapper
-        run: pnpm test
+        run: pnpm test:unit
+
+      - name: Run integration tests
+        working-directory: node-wrapper
+        run: pnpm test:integration
+
+      - name: Run CLI tests
+        working-directory: node-wrapper
+        run: pnpm test:cli
+
+      - name: Run tests with coverage
+        working-directory: node-wrapper
+        run: pnpm test:coverage
 
       - name: Build TypeScript
         working-directory: node-wrapper
         run: pnpm build
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          directory: node-wrapper/coverage
+          flags: node-tests
+          name: node-coverage
 
       - name: Upload Node.js build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: node-wrapper-build
           path: node-wrapper/dist/
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: node-test-results
+          path: |
+            node-wrapper/coverage/
+            node-wrapper/jest-results.xml
+          retention-days: 7
 
   integration-test:
     runs-on: ubuntu-latest

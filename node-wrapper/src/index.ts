@@ -33,6 +33,7 @@ program
       } else {
         console.error(`❌ Error: ${String(err)}`);
       }
+      process.exit(1);
     }
   });
 
@@ -57,6 +58,7 @@ program
       } else {
         console.error(`❌ Error: ${String(err)}`);
       }
+      process.exit(1);
     }
   });
 
@@ -86,6 +88,7 @@ program
       } else {
         console.error(`❌ Error: ${String(err)}`);
       }
+      process.exit(1);
     }
   });
 

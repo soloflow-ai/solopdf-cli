@@ -1,13 +1,23 @@
 [package]
-name = "rust-core"
+name = "rust_core"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+
+[features]
+test-utils = []
 
 [dependencies]
 lopdf = "0.36.0"
 napi = { version = "3.1.3", features = ["napi6"] }
 napi-derive = "3.1.1"
 
+[dev-dependencies]
+tempfile = "3.12.0"
+pdf-writer = "0.11.0"
 
 [lib]
 crate-type = ["cdylib"]
+
+[[bin]]
+name = "generate_test_pdfs"
+path = "src/bin/generate_test_pdfs.rs"

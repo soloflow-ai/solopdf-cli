@@ -48,6 +48,12 @@ Thumbs.db
 # ESLint cache
 .eslintcache
 
+# Test execution artifacts
+**/executed/
+
+# Test coverage reports
+**/coverage/
+
 # Jest coverage
 coverage/
 

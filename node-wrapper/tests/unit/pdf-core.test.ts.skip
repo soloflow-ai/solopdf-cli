@@ -1,0 +1,287 @@
+import { describe, it, expect, beforeAll } from '@jest/globals';
+import {
+  getPageCount,
+  signPdf,
+  getPdfInfoBeforeSigning,
+} from '../../../rust-core/index.js';
+import fs from 'fs';
+import path from 'path';
+
+describe('PDF Core Functions', () => {
+  const samplePdfsDir = path.join(__dirname, '../../../sample-pdfs');
+  let samplePdfs: string[] = [];
+
+  beforeAll(() => {
+    // Get all sample PDFs for testing
+    if (fs.existsSync(samplePdfsDir)) {
+      samplePdfs = fs
+        .readdirSync(samplePdfsDir)
+        .filter((file) => file.endsWith('.pdf'))
+        .map((file) => path.join(samplePdfsDir, file));
+    }
+  });
+
+  describe('getPageCount', () => {
+    it('should return page count for valid PDF files', () => {
+      samplePdfs.forEach((pdfPath) => {
+        if (fs.existsSync(pdfPath)) {
+          const pageCount = getPageCount(pdfPath);
+          expect(typeof pageCount).toBe('number');
+          expect(pageCount).toBeGreaterThanOrEqual(0);
+          expect(pageCount).toBeLessThan(10000); // Reasonable upper limit
+        }
+      });
+    });
+
+    it('should throw error for non-existent file', () => {
+      expect(() => {
+        getPageCount('/non/existent/file.pdf');
+      }).toThrow();
+    });
+
+    it('should throw error for invalid PDF file', () => {
+      const tempFile = path.join(__dirname, 'temp-invalid.pdf');
+      fs.writeFileSync(tempFile, 'This is not a PDF file');
+
+      try {
+        expect(() => {
+          getPageCount(tempFile);
+        }).toThrow();
+      } finally {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile);
+        }
+      }
+    });
+
+    it('should handle special characters in file paths', () => {
+      // Test with first available sample PDF
+      if (samplePdfs.length > 0) {
+        const originalPath = samplePdfs[0];
+        const tempDir = path.join(__dirname, 'temp-special-chars');
+        const specialPath = path.join(
+          tempDir,
+          'test-file-with-spëcial-chars.pdf',
+        );
+
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+
+        try {
+          fs.copyFileSync(originalPath, specialPath);
+          const pageCount = getPageCount(specialPath);
+          expect(typeof pageCount).toBe('number');
+          expect(pageCount).toBeGreaterThanOrEqual(0);
+        } finally {
+          if (fs.existsSync(specialPath)) {
+            fs.unlinkSync(specialPath);
+          }
+          if (fs.existsSync(tempDir)) {
+            fs.rmdirSync(tempDir);
+          }
+        }
+      }
+    });
+  });
+
+  describe('getPdfInfoBeforeSigning', () => {
+    it('should return same result as getPageCount', () => {
+      samplePdfs.slice(0, 3).forEach((pdfPath) => {
+        if (fs.existsSync(pdfPath)) {
+          const pageCount = getPageCount(pdfPath);
+          const pdfInfo = getPdfInfoBeforeSigning(pdfPath);
+          expect(pdfInfo).toBe(pageCount);
+        }
+      });
+    });
+
+    it('should throw error for non-existent file', () => {
+      expect(() => {
+        getPdfInfoBeforeSigning('/non/existent/file.pdf');
+      }).toThrow();
+    });
+  });
+
+  describe('signPdf', () => {
+    it('should sign PDF without changing page count', () => {
+      if (samplePdfs.length > 0) {
+        const originalPath = samplePdfs[0];
+        const tempPath = path.join(__dirname, 'temp-sign-test.pdf');
+
+        try {
+          // Copy sample PDF for testing
+          fs.copyFileSync(originalPath, tempPath);
+
+          // Get original page count
+          const originalCount = getPageCount(tempPath);
+
+          // Sign the PDF
+          signPdf(tempPath, 'Test Signature');
+
+          // Verify page count remains the same
+          const newCount = getPageCount(tempPath);
+          expect(newCount).toBe(originalCount);
+        } finally {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+        }
+      }
+    });
+
+    it('should handle empty signature', () => {
+      if (samplePdfs.length > 0) {
+        const originalPath = samplePdfs[0];
+        const tempPath = path.join(__dirname, 'temp-empty-sig.pdf');
+
+        try {
+          fs.copyFileSync(originalPath, tempPath);
+
+          expect(() => {
+            signPdf(tempPath, '');
+          }).not.toThrow();
+        } finally {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+        }
+      }
+    });
+
+    it('should handle long signatures', () => {
+      if (samplePdfs.length > 0) {
+        const originalPath = samplePdfs[0];
+        const tempPath = path.join(__dirname, 'temp-long-sig.pdf');
+
+        try {
+          fs.copyFileSync(originalPath, tempPath);
+          const longSignature = 'A'.repeat(1000);
+
+          expect(() => {
+            signPdf(tempPath, longSignature);
+          }).not.toThrow();
+        } finally {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+        }
+      }
+    });
+
+    it('should handle special characters in signature', () => {
+      if (samplePdfs.length > 0) {
+        const originalPath = samplePdfs[0];
+        const tempPath = path.join(__dirname, 'temp-special-sig.pdf');
+
+        try {
+          fs.copyFileSync(originalPath, tempPath);
+          const specialSignature =
+            'John Döe - Signature with émojis 🖊️ and spëcial chars!';
+
+          expect(() => {
+            signPdf(tempPath, specialSignature);
+          }).not.toThrow();
+        } finally {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+        }
+      }
+    });
+
+    it('should throw error for non-existent file', () => {
+      expect(() => {
+        signPdf('/non/existent/file.pdf', 'Signature');
+      }).toThrow();
+    });
+
+    it('should throw error for invalid PDF file', () => {
+      const tempFile = path.join(__dirname, 'temp-invalid-sign.pdf');
+      fs.writeFileSync(tempFile, 'This is not a PDF file');
+
+      try {
+        expect(() => {
+          signPdf(tempFile, 'Signature');
+        }).toThrow();
+      } finally {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile);
+        }
+      }
+    });
+  });
+
+  describe('Integration Tests', () => {
+    it('should handle complete workflow: info -> sign -> verify', () => {
+      if (samplePdfs.length > 0) {
+        const originalPath = samplePdfs[0];
+        const tempPath = path.join(__dirname, 'temp-workflow.pdf');
+
+        try {
+          fs.copyFileSync(originalPath, tempPath);
+
+          // Get info before signing
+          const initialInfo = getPdfInfoBeforeSigning(tempPath);
+          expect(typeof initialInfo).toBe('number');
+
+          // Sign the PDF
+          signPdf(tempPath, 'Workflow Test Signature');
+
+          // Verify final state
+          const finalCount = getPageCount(tempPath);
+          expect(finalCount).toBe(initialInfo);
+        } finally {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+        }
+      }
+    });
+
+    it('should handle multiple operations on same file', () => {
+      if (samplePdfs.length > 0) {
+        const originalPath = samplePdfs[0];
+        const tempPath = path.join(__dirname, 'temp-multiple.pdf');
+
+        try {
+          fs.copyFileSync(originalPath, tempPath);
+
+          // Multiple page count calls
+          const count1 = getPageCount(tempPath);
+          const count2 = getPageCount(tempPath);
+          expect(count2).toBe(count1);
+
+          // Sign and check again
+          signPdf(tempPath, 'First Signature');
+          const count3 = getPageCount(tempPath);
+          expect(count3).toBe(count1);
+
+          // Sign again and check
+          signPdf(tempPath, 'Second Signature');
+          const count4 = getPageCount(tempPath);
+          expect(count4).toBe(count1);
+        } finally {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+        }
+      }
+    });
+  });
+
+  describe('Performance Tests', () => {
+    it('should complete operations within reasonable time', () => {
+      if (samplePdfs.length > 0) {
+        const pdfPath = samplePdfs[0];
+
+        const start = Date.now();
+        const pageCount = getPageCount(pdfPath);
+        const duration = Date.now() - start;
+
+        expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
+        expect(typeof pageCount).toBe('number');
+      }
+    });
+  });
+});
