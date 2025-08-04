@@ -60,5 +60,7 @@ coverage/
 # PNPM specific
 .pnpm-debug.log*
 
-# Bin
-**/bin
+# Binary executables (but not source code in src/bin)
+/bin
+**/target/**/bin
+node-wrapper/bin
