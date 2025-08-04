@@ -78,7 +78,7 @@ jobs:
 
       - name: Publish to NPM
         working-directory: node-wrapper
-        run: pnpm publish --access public --no-git-checks
+
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -121,7 +121,7 @@ jobs:
 
       - name: Publish to NPM
         working-directory: node-wrapper
-        run: pnpm publish --access public
+        run: pnpm publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
