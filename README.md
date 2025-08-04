@@ -5,7 +5,8 @@ A blazingly fast PDF manipulation CLI tool powered by Rust and Node.js.
 ## Features
 
 - 🚀 **Ultra-fast**: Core operations powered by Rust for maximum performance
-- 📄 **PDF Analysis**: Get page counts and basic PDF information  
+- 📄 **PDF Analysis**: Get page counts and basic PDF information
+- ✍️ **PDF Signing**: Add signature fields to PDF documents
 - 🔧 **Easy to Use**: Simple command-line interface
 - 🌐 **Cross-platform**: Works on Linux, macOS, and Windows
 
@@ -31,6 +32,24 @@ solopdf pages document.pdf
 
 This will quickly analyze the PDF and return the number of pages.
 
+### Get PDF Information
+
+```bash
+solopdf info document.pdf
+```
+
+Get detailed information about a PDF file, including page count and file path.
+
+### Sign a PDF
+
+```bash
+solopdf sign document.pdf "Your Signature Text"
+```
+
+Add a signature field to a PDF document with the specified signature text.
+
+**Note:** This creates a signature field in the PDF structure but does not create a legally-binding or verifiable digital signature. For real digital signatures, cryptographic capabilities are required.
+
 ## Requirements
 
 - Node.js 18.0.0 or higher
@@ -38,22 +57,22 @@ This will quickly analyze the PDF and return the number of pages.
 
 Our goal is to build a tool that is not only feature-rich but also incredibly easy to integrate into your projects or use directly from the terminal. We are building this project in the open, sharing our progress, and we welcome contributors of all levels to join us on this journey to build the best PDF tool available.
 
------
+---
 
 ## ✨ Core Features (Roadmap)
 
 Our vision is for SoloPDF to be a one-stop shop for PDF tasks. The planned features include:
 
-  * **Create PDFs:** Generate PDFs from scratch using a simple, declarative API. Define your document structure with code for maximum flexibility and version control.
-  * **Modify PDFs:** Perform complex manipulations with simple commands. Merge multiple documents, split a file into individual pages, rotate pages, reorder them, or extract a specific page range.
-  * **Generate from HTML:** Convert any HTML file or live URL directly into a pixel-perfect PDF, preserving styles, images, and layout.
-  * **Customize Content:** Add text with specific fonts and formatting, overlay images as watermarks or figures, and draw basic shapes to annotate or structure your documents with precision.
-  * **Form Filling:** Programmatically find and fill out interactive PDF forms, saving time and automating workflows.
-  * **Digital Signatures:** Add cryptographically secure digital signatures to documents, ensuring authenticity and integrity.
-  * **Text Extraction:** Easily extract and parse text content from PDF files for data processing, indexing, or analysis.
-  * **Optimization:** Reduce file size for easier sharing and faster web loading by optimizing images, removing redundant data, and compressing content without sacrificing quality.
+- **Create PDFs:** Generate PDFs from scratch using a simple, declarative API. Define your document structure with code for maximum flexibility and version control.
+- **Modify PDFs:** Perform complex manipulations with simple commands. Merge multiple documents, split a file into individual pages, rotate pages, reorder them, or extract a specific page range.
+- **Generate from HTML:** Convert any HTML file or live URL directly into a pixel-perfect PDF, preserving styles, images, and layout.
+- **Customize Content:** Add text with specific fonts and formatting, overlay images as watermarks or figures, and draw basic shapes to annotate or structure your documents with precision.
+- **Form Filling:** Programmatically find and fill out interactive PDF forms, saving time and automating workflows.
+- **Digital Signatures:** Add cryptographically secure digital signatures to documents, ensuring authenticity and integrity.
+- **Text Extraction:** Easily extract and parse text content from PDF files for data processing, indexing, or analysis.
+- **Optimization:** Reduce file size for easier sharing and faster web loading by optimizing images, removing redundant data, and compressing content without sacrificing quality.
 
------
+---
 
 ## 🚀 Getting Started
 
@@ -61,8 +80,8 @@ Our vision is for SoloPDF to be a one-stop shop for PDF tasks. The planned featu
 
 ### Prerequisites
 
-  * Node.js (v18.x or later)
-  * `npm` or `yarn`
+- Node.js (v18.x or later)
+- `npm` or `yarn`
 
 ### Installation
 
@@ -70,7 +89,7 @@ Our vision is for SoloPDF to be a one-stop shop for PDF tasks. The planned featu
 npm install -g solopdf
 ```
 
------
+---
 
 ## 💻 Simple Usage (CLI)
 
@@ -100,7 +119,7 @@ solopdf sign -in document.pdf -signature signature.png -pos "bottom-right" -out 
 solopdf extract-text -in report.pdf -out report.txt
 ```
 
------
+---
 
 ## 🤝 Contributing
 
@@ -108,7 +127,7 @@ We believe in the power of community and welcome **contributions of all kinds\!*
 
 Please read our **Contributing Guide** to see how you can get involved with the project and help us make it better.
 
------
+---
 
 ## 📜 License
 
