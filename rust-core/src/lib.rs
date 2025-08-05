@@ -17,7 +17,12 @@ pub fn get_page_count(file_path: String) -> napi::Result<u32> {
 
 #[napi]
 pub fn sign_pdf(file_path: String, signature_text: String) -> napi::Result<()> {
-    sign::sign_pdf(file_path, signature_text)
+    sign::sign_pdf_legacy(file_path, signature_text)
+}
+
+#[napi]
+pub fn sign_pdf_legacy(file_path: String, signature_text: String) -> napi::Result<()> {
+    sign::sign_pdf_legacy(file_path, signature_text)
 }
 
 #[napi]

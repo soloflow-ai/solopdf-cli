@@ -4,4 +4,17 @@ export declare function getPageCount(filePath: string): number
 
 export declare function getPdfInfoBeforeSigning(filePath: string): number
 
+export interface SigningOptions {
+  fontSize?: number
+  color?: string
+  xPosition?: number
+  yPosition?: number
+  pages?: Array<number>
+  position?: string
+  rotation?: number
+  opacity?: number
+}
+
 export declare function signPdf(filePath: string, signatureText: string): void
+
+export declare function signPdfLegacy(filePath: string, signatureText: string): void
