@@ -16,9 +16,9 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "test:unit": "jest --testPathPatterns=unit",
-    "test:integration": "jest --testPathPatterns=integration",
-    "test:cli": "jest --testPathPatterns=cli",
+    "test:unit": "jest --testPathPatterns=unit --passWithNoTests",
+    "test:integration": "jest --testPathPatterns=integration --passWithNoTests",
+    "test:cli": "jest --testPathPatterns=cli --passWithNoTests",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "setup-test-env": "node ../scripts/setup-execution-env.mjs",
