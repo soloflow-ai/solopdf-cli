@@ -56,23 +56,33 @@ pub fn sign_pdf_with_visible_text(file_path: String, signature_text: String) -> 
     }
 
     let (first_page_id, _) = pages.iter().next().unwrap();
-    
+
     // Create a text object for the signature
     let text_object = lopdf::content::Content {
         operations: vec![
             // Set text position (bottom-right corner, approximately)
             lopdf::content::Operation::new("BT", vec![]), // Begin text
-            lopdf::content::Operation::new("Tf", vec![
-                lopdf::Object::Name(b"Helvetica".to_vec()),
-                lopdf::Object::Real(12.0),
-            ]), // Set font
-            lopdf::content::Operation::new("Td", vec![
-                lopdf::Object::Real(400.0), // X position
-                lopdf::Object::Real(50.0),  // Y position
-            ]), // Set text position
-            lopdf::content::Operation::new("Tj", vec![
-                lopdf::Object::String(signature_text.clone().into_bytes(), lopdf::StringFormat::Literal),
-            ]), // Show text
+            lopdf::content::Operation::new(
+                "Tf",
+                vec![
+                    lopdf::Object::Name(b"Helvetica".to_vec()),
+                    lopdf::Object::Real(12.0),
+                ],
+            ), // Set font
+            lopdf::content::Operation::new(
+                "Td",
+                vec![
+                    lopdf::Object::Real(400.0), // X position
+                    lopdf::Object::Real(50.0),  // Y position
+                ],
+            ), // Set text position
+            lopdf::content::Operation::new(
+                "Tj",
+                vec![lopdf::Object::String(
+                    signature_text.clone().into_bytes(),
+                    lopdf::StringFormat::Literal,
+                )],
+            ), // Show text
             lopdf::content::Operation::new("ET", vec![]), // End text
         ],
     };
@@ -86,36 +96,33 @@ pub fn sign_pdf_with_visible_text(file_path: String, signature_text: String) -> 
     })?;
 
     // Create a content stream object
-    let content_stream = lopdf::Object::Stream(lopdf::Stream::new(
-        lopdf::Dictionary::new(),
-        content_data,
-    ));
+    let content_stream =
+        lopdf::Object::Stream(lopdf::Stream::new(lopdf::Dictionary::new(), content_data));
     let content_id = document.add_object(content_stream);
 
     // Get the page object and add the content stream
     // Convert u32 to ObjectId (u32, u16) with generation 0
     let page_object_id = (*first_page_id, 0);
-    if let Ok(page_obj) = document.get_object_mut(page_object_id) {
-        if let lopdf::Object::Dictionary(page_dict) = page_obj {
-            // Add the content stream to the page's Contents array
-            match page_dict.get_mut(b"Contents") {
-                Ok(lopdf::Object::Array(contents)) => {
-                    contents.push(lopdf::Object::Reference(content_id));
-                }
-                Ok(lopdf::Object::Reference(_)) => {
-                    // If Contents is a single reference, convert it to an array
-                    let old_contents = page_dict.get(b"Contents").unwrap().clone();
-                    page_dict.set("Contents", lopdf::Object::Array(vec![
-                        old_contents,
-                        lopdf::Object::Reference(content_id),
-                    ]));
-                }
-                _ => {
-                    // If no Contents, create a new array
-                    page_dict.set("Contents", lopdf::Object::Array(vec![
-                        lopdf::Object::Reference(content_id),
-                    ]));
-                }
+    if let Ok(lopdf::Object::Dictionary(page_dict)) = document.get_object_mut(page_object_id) {
+        // Add the content stream to the page's Contents array
+        match page_dict.get_mut(b"Contents") {
+            Ok(lopdf::Object::Array(contents)) => {
+                contents.push(lopdf::Object::Reference(content_id));
+            }
+            Ok(lopdf::Object::Reference(_)) => {
+                // If Contents is a single reference, convert it to an array
+                let old_contents = page_dict.get(b"Contents").unwrap().clone();
+                page_dict.set(
+                    "Contents",
+                    lopdf::Object::Array(vec![old_contents, lopdf::Object::Reference(content_id)]),
+                );
+            }
+            _ => {
+                // If no Contents, create a new array
+                page_dict.set(
+                    "Contents",
+                    lopdf::Object::Array(vec![lopdf::Object::Reference(content_id)]),
+                );
             }
         }
     }
@@ -176,9 +183,9 @@ pub fn sign_pdf_with_visible_text(file_path: String, signature_text: String) -> 
 
 /// Advanced signing function that accepts options for customization
 pub fn sign_pdf_with_options(
-    file_path: String, 
-    signature_text: String, 
-    options: Option<SigningOptions>
+    file_path: String,
+    signature_text: String,
+    options: Option<SigningOptions>,
 ) -> Result<()> {
     let opts = options.unwrap_or(SigningOptions {
         font_size: Some(12.0),
@@ -210,15 +217,19 @@ pub fn sign_pdf_with_options(
 
     // Determine which pages to sign
     let target_pages: Vec<_> = if let Some(page_nums) = &opts.pages {
-        pages.iter().enumerate().filter_map(|(i, (page_id, _))| {
-            if page_nums.contains(&((i + 1) as u32)) {
-                Some(*page_id)
-            } else {
-                None
-            }
-        }).collect()
+        pages
+            .iter()
+            .enumerate()
+            .filter_map(|(i, (page_id, _))| {
+                if page_nums.contains(&((i + 1) as u32)) {
+                    Some(*page_id)
+                } else {
+                    None
+                }
+            })
+            .collect()
     } else {
-        pages.iter().map(|(page_id, _)| *page_id).collect()
+        pages.keys().copied().collect()
     };
 
     // Get positioning values
@@ -228,7 +239,10 @@ pub fn sign_pdf_with_options(
         Some("top-right") => (450.0, 750.0),
         Some("bottom-left") => (50.0, 50.0),
         Some("center") => (300.0, 400.0),
-        _ => (opts.x_position.unwrap_or(400.0), opts.y_position.unwrap_or(50.0)), // default bottom-right
+        _ => (
+            opts.x_position.unwrap_or(400.0),
+            opts.y_position.unwrap_or(50.0),
+        ), // default bottom-right
     };
 
     // Sign each target page
@@ -237,17 +251,27 @@ pub fn sign_pdf_with_options(
         let text_object = lopdf::content::Content {
             operations: vec![
                 lopdf::content::Operation::new("BT", vec![]),
-                lopdf::content::Operation::new("Tf", vec![
-                    lopdf::Object::Name(b"Helvetica".to_vec()),
-                    lopdf::Object::Real(font_size as f32),
-                ]),
-                lopdf::content::Operation::new("Td", vec![
-                    lopdf::Object::Real(x_pos as f32),
-                    lopdf::Object::Real(y_pos as f32),
-                ]),
-                lopdf::content::Operation::new("Tj", vec![
-                    lopdf::Object::String(signature_text.clone().into_bytes(), lopdf::StringFormat::Literal),
-                ]),
+                lopdf::content::Operation::new(
+                    "Tf",
+                    vec![
+                        lopdf::Object::Name(b"Helvetica".to_vec()),
+                        lopdf::Object::Real(font_size as f32),
+                    ],
+                ),
+                lopdf::content::Operation::new(
+                    "Td",
+                    vec![
+                        lopdf::Object::Real(x_pos as f32),
+                        lopdf::Object::Real(y_pos as f32),
+                    ],
+                ),
+                lopdf::content::Operation::new(
+                    "Tj",
+                    vec![lopdf::Object::String(
+                        signature_text.clone().into_bytes(),
+                        lopdf::StringFormat::Literal,
+                    )],
+                ),
                 lopdf::content::Operation::new("ET", vec![]),
             ],
         };
@@ -260,32 +284,32 @@ pub fn sign_pdf_with_options(
             )
         })?;
 
-        let content_stream = lopdf::Object::Stream(lopdf::Stream::new(
-            lopdf::Dictionary::new(),
-            content_data,
-        ));
+        let content_stream =
+            lopdf::Object::Stream(lopdf::Stream::new(lopdf::Dictionary::new(), content_data));
         let content_id = document.add_object(content_stream);
 
         // Add to page contents
         let page_object_id = (page_id, 0);
-        if let Ok(page_obj) = document.get_object_mut(page_object_id) {
-            if let lopdf::Object::Dictionary(page_dict) = page_obj {
-                match page_dict.get_mut(b"Contents") {
-                    Ok(lopdf::Object::Array(contents)) => {
-                        contents.push(lopdf::Object::Reference(content_id));
-                    }
-                    Ok(lopdf::Object::Reference(_)) => {
-                        let old_contents = page_dict.get(b"Contents").unwrap().clone();
-                        page_dict.set("Contents", lopdf::Object::Array(vec![
+        if let Ok(lopdf::Object::Dictionary(page_dict)) = document.get_object_mut(page_object_id) {
+            match page_dict.get_mut(b"Contents") {
+                Ok(lopdf::Object::Array(contents)) => {
+                    contents.push(lopdf::Object::Reference(content_id));
+                }
+                Ok(lopdf::Object::Reference(_)) => {
+                    let old_contents = page_dict.get(b"Contents").unwrap().clone();
+                    page_dict.set(
+                        "Contents",
+                        lopdf::Object::Array(vec![
                             old_contents,
                             lopdf::Object::Reference(content_id),
-                        ]));
-                    }
-                    _ => {
-                        page_dict.set("Contents", lopdf::Object::Array(vec![
-                            lopdf::Object::Reference(content_id),
-                        ]));
-                    }
+                        ]),
+                    );
+                }
+                _ => {
+                    page_dict.set(
+                        "Contents",
+                        lopdf::Object::Array(vec![lopdf::Object::Reference(content_id)]),
+                    );
                 }
             }
         }
@@ -414,7 +438,6 @@ pub fn sign_pdf_legacy(file_path: String, signature_text: String) -> Result<()> 
 
     Ok(())
 }
-
 
 // Internal versions for testing
 pub fn get_pdf_info_before_signing_internal(

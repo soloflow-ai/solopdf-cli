@@ -35,9 +35,9 @@ pub fn sign_pdf_with_visible_text(file_path: String, signature_text: String) -> 
 
 #[napi]
 pub fn sign_pdf_with_options(
-    file_path: String, 
-    signature_text: String, 
-    options: Option<SigningOptions>
+    file_path: String,
+    signature_text: String,
+    options: Option<SigningOptions>,
 ) -> napi::Result<()> {
     sign::sign_pdf_with_options(file_path, signature_text, options)
 }
