@@ -34,6 +34,13 @@ echo -e "${YELLOW}🔍 Building NAPI...${NC}"
 npx napi build --release
 check_status "NAPI build"
 
+echo -e "${YELLOW}🔍 Verifying NAPI files...${NC}"
+if [ -f "index.node" ] && [ -f "index.js" ] && [ -f "index.d.ts" ]; then
+    echo -e "${GREEN}✅ NAPI files verified${NC}"
+else
+    echo -e "${RED}❌ Missing NAPI files${NC}"
+    exit 1
+fi
 cd ..
 
 echo -e "${GREEN}✨ Quick validation passed! ✨${NC}"

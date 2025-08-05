@@ -34,6 +34,14 @@ echo -e "${YELLOW}📋 Step 4: Build NAPI Module${NC}"
 npm install && npx napi build --release
 check_status "NAPI build"
 
+echo -e "${YELLOW}📋 Step 4.1: Verify NAPI Module Files${NC}"
+if [ -f "index.node" ] && [ -f "index.js" ] && [ -f "index.d.ts" ]; then
+    echo -e "${GREEN}✅ All NAPI files present${NC}"
+else
+    echo -e "${RED}❌ Missing NAPI files - listing available files:${NC}"
+    ls -la index.* || echo "No index files found"
+    exit 1
+fi
 echo -e "${YELLOW}📋 Step 5: Generate Test PDFs${NC}"
 mkdir -p ../executed/generated-pdfs
 cargo run --bin generate_test_pdfs -- ../executed/generated-pdfs
