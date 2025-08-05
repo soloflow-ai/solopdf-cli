@@ -6,7 +6,12 @@ export default {
   testMatch: ['**/*.test.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: 'tests/tsconfig.json',
+      },
+    ],
   },
   transformIgnorePatterns: [
     'node_modules/(?!.*\\.mjs$)',

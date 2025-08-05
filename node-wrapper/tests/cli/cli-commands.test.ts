@@ -3,16 +3,24 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
+// Global fail function for Jest
+declare global {
+  function fail(message?: string): never;
+}
+
+// Use current working directory to build test paths
+const testDir = path.resolve('./tests/cli');
+
 describe('CLI Commands', () => {
-  const cliPath = path.join(__dirname, '../../dist/index.js');
-  const samplePdfsDir = path.join(__dirname, '../../../sample-pdfs');
+  const cliPath = path.join(testDir, '../../dist/index.js');
+  const samplePdfsDir = path.join(testDir, '../../../sample-pdfs');
   let samplePdfs: string[] = [];
   const tempFiles: string[] = [];
 
   beforeAll(() => {
     // Ensure CLI is built
     if (!fs.existsSync(cliPath)) {
-      execSync('npm run build', { cwd: path.join(__dirname, '../..') });
+      execSync('npm run build', { cwd: path.join(testDir, '../..') });
     }
 
     // Get sample PDFs
@@ -114,7 +122,7 @@ describe('CLI Commands', () => {
     });
 
     it('should handle invalid PDF file gracefully', () => {
-      const tempFile = path.join(__dirname, 'temp-invalid-cli.pdf');
+      const tempFile = path.join(testDir, 'temp-invalid-cli.pdf');
       tempFiles.push(tempFile);
       fs.writeFileSync(tempFile, 'This is not a PDF file');
 
@@ -130,7 +138,7 @@ describe('CLI Commands', () => {
     it('should handle file paths with spaces', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp file with spaces.pdf');
+        const tempPath = path.join(testDir, 'temp file with spaces.pdf');
         tempFiles.push(tempPath);
 
         fs.copyFileSync(originalPath, tempPath);
@@ -177,14 +185,16 @@ describe('CLI Commands', () => {
     it('should sign PDF files successfully', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp-cli-sign.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-sign.pdf');
+        const outputPath = path.join(testDir, 'temp-cli-sign-output.pdf');
         tempFiles.push(tempPath);
+        tempFiles.push(outputPath);
 
         fs.copyFileSync(originalPath, tempPath);
 
         const signature = 'CLI Test Signature';
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "${signature}"`,
+          `node ${cliPath} sign "${tempPath}" "${signature}" "${outputPath}"`,
           { encoding: 'utf8' },
         );
 
@@ -193,69 +203,87 @@ describe('CLI Commands', () => {
         expect(output).toContain(signature);
         expect(output).toContain('Document has');
         expect(output).toContain('pages');
+        expect(fs.existsSync(outputPath)).toBe(true);
       }
     });
 
     it('should handle signature with special characters', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp-cli-special.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-special.pdf');
+        const outputPath = path.join(testDir, 'temp-cli-special-output.pdf');
         tempFiles.push(tempPath);
+        tempFiles.push(outputPath);
 
         fs.copyFileSync(originalPath, tempPath);
 
         const signature = 'John Döe - Spëcial Signature 🖊️';
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "${signature}"`,
+          `node ${cliPath} sign "${tempPath}" "${signature}" "${outputPath}"`,
           { encoding: 'utf8' },
         );
 
         expect(output).toContain('Success');
         expect(output).toContain('PDF signed');
+        expect(fs.existsSync(outputPath)).toBe(true);
       }
     });
 
     it('should handle empty signature', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp-cli-empty.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-empty.pdf');
+        const outputPath = path.join(testDir, 'temp-cli-empty-output.pdf');
         tempFiles.push(tempPath);
+        tempFiles.push(outputPath);
 
         fs.copyFileSync(originalPath, tempPath);
 
-        const output = execSync(`node ${cliPath} sign "${tempPath}" ""`, {
-          encoding: 'utf8',
-        });
+        const output = execSync(
+          `node ${cliPath} sign "${tempPath}" "" "${outputPath}"`,
+          {
+            encoding: 'utf8',
+          },
+        );
 
         expect(output).toContain('Success');
         expect(output).toContain('PDF signed');
+        expect(fs.existsSync(outputPath)).toBe(true);
       }
     });
 
     it('should handle long signatures', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp-cli-long.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-long.pdf');
+        const outputPath = path.join(testDir, 'temp-cli-long-output.pdf');
         tempFiles.push(tempPath);
+        tempFiles.push(outputPath);
 
         fs.copyFileSync(originalPath, tempPath);
 
         const longSignature = 'Very long signature: ' + 'A'.repeat(100);
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "${longSignature}"`,
+          `node ${cliPath} sign "${tempPath}" "${longSignature}" "${outputPath}"`,
           { encoding: 'utf8' },
         );
 
         expect(output).toContain('Success');
         expect(output).toContain('PDF signed');
+        expect(fs.existsSync(outputPath)).toBe(true);
       }
     });
 
     it('should handle non-existent file gracefully', () => {
+      const outputPath = path.join(testDir, 'signed-nonexistent.pdf');
+      tempFiles.push(outputPath);
       try {
-        execSync(`node ${cliPath} sign "/non/existent/file.pdf" "Signature"`, {
-          encoding: 'utf8',
-        });
+        execSync(
+          `node ${cliPath} sign "/non/existent/file.pdf" "Signature" "${outputPath}"`,
+          {
+            encoding: 'utf8',
+          },
+        );
         fail('Should have thrown an error');
       } catch (error: unknown) {
         const execError = error as { status: number };
@@ -266,16 +294,22 @@ describe('CLI Commands', () => {
     it('should display page count before signing', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp-cli-info.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-info.pdf');
+        const outputPath = path.join(testDir, 'temp-cli-info-output.pdf');
         tempFiles.push(tempPath);
+        tempFiles.push(outputPath);
 
         fs.copyFileSync(originalPath, tempPath);
 
-        const output = execSync(`node ${cliPath} sign "${tempPath}" "Test"`, {
-          encoding: 'utf8',
-        });
+        const output = execSync(
+          `node ${cliPath} sign "${tempPath}" "Test" "${outputPath}"`,
+          {
+            encoding: 'utf8',
+          },
+        );
 
         expect(output).toContain('Document has');
+        expect(fs.existsSync(outputPath)).toBe(true);
         expect(output).toContain('pages');
         expect(output).toMatch(/Document has\s+\d+\s+pages/);
       }
@@ -286,7 +320,7 @@ describe('CLI Commands', () => {
     it('should handle workflow: info -> sign -> pages', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp-cli-workflow.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-workflow.pdf');
         tempFiles.push(tempPath);
 
         fs.copyFileSync(originalPath, tempPath);
@@ -300,14 +334,17 @@ describe('CLI Commands', () => {
         const originalPages = parseInt(pageMatch![1]);
 
         // Sign
+        const outputPath = path.join(testDir, 'temp-cli-workflow-output.pdf');
+        tempFiles.push(outputPath);
         const signOutput = execSync(
-          `node ${cliPath} sign "${tempPath}" "Workflow Test"`,
+          `node ${cliPath} sign "${tempPath}" "Workflow Test" "${outputPath}"`,
           { encoding: 'utf8' },
         );
         expect(signOutput).toContain('Success');
+        expect(fs.existsSync(outputPath)).toBe(true);
 
-        // Check pages again
-        const pagesOutput = execSync(`node ${cliPath} pages "${tempPath}"`, {
+        // Check pages again (on the signed output file)
+        const pagesOutput = execSync(`node ${cliPath} pages "${outputPath}"`, {
           encoding: 'utf8',
         });
         const finalPageMatch = pagesOutput.match(/Page count:\s*(\d+)/);
@@ -321,27 +358,33 @@ describe('CLI Commands', () => {
     it('should handle multiple signatures on same file', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(__dirname, 'temp-cli-multi.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-multi.pdf');
         tempFiles.push(tempPath);
 
         fs.copyFileSync(originalPath, tempPath);
 
         // First signature
+        const output1Path = path.join(testDir, 'temp-cli-multi-1.pdf');
+        tempFiles.push(output1Path);
         const output1 = execSync(
-          `node ${cliPath} sign "${tempPath}" "First Signature"`,
+          `node ${cliPath} sign "${tempPath}" "First Signature" "${output1Path}"`,
           { encoding: 'utf8' },
         );
         expect(output1).toContain('Success');
+        expect(fs.existsSync(output1Path)).toBe(true);
 
-        // Second signature
+        // Second signature (using first output as input)
+        const output2Path = path.join(testDir, 'temp-cli-multi-2.pdf');
+        tempFiles.push(output2Path);
         const output2 = execSync(
-          `node ${cliPath} sign "${tempPath}" "Second Signature"`,
+          `node ${cliPath} sign "${output1Path}" "Second Signature" "${output2Path}"`,
           { encoding: 'utf8' },
         );
         expect(output2).toContain('Success');
+        expect(fs.existsSync(output2Path)).toBe(true);
 
-        // Verify still works
-        const pagesOutput = execSync(`node ${cliPath} pages "${tempPath}"`, {
+        // Verify final file still works
+        const pagesOutput = execSync(`node ${cliPath} pages "${output2Path}"`, {
           encoding: 'utf8',
         });
         expect(pagesOutput).toContain('Success');

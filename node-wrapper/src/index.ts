@@ -145,11 +145,16 @@ program
     '1.0',
   )
   .action(
-    (file: string, signature: string, output: string, options: Record<string, string>) => {
+    (
+      file: string,
+      signature: string,
+      output: string,
+      options: Record<string, string>,
+    ) => {
       try {
         const absolutePath = path.resolve(file);
         const outputPath = path.resolve(output);
-        
+
         console.log(chalk.blue('📄 Input PDF:'), chalk.white(absolutePath));
         console.log(chalk.blue('✍️  Output PDF:'), chalk.white(outputPath));
         console.log(

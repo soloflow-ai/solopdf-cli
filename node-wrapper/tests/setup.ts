@@ -6,7 +6,6 @@ beforeAll(() => {
   jest.setTimeout(30000);
 });
 
-// Global test utilities
-global.fail = (message?: string) => {
+globalThis.fail = (message?: string): never => {
   throw new Error(message || 'Test failed');
 };
