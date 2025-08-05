@@ -68,6 +68,10 @@ jobs:
         working-directory: rust-core
         run: cargo build --release
 
+      - name: Install NAPI CLI
+        working-directory: rust-core
+        run: npm install
+
       - name: Build NAPI module
         working-directory: rust-core
         run: npx napi build --release

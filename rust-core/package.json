@@ -5,9 +5,14 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "build": "napi build --release",
+    "build:debug": "napi build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0"
+  }
 }
