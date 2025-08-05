@@ -10,14 +10,13 @@
   },
   "files": [
     "dist/**/*",
-    "rust-core/index.js",
-    "rust-core/index.d.ts",
-    "rust-core/index.node",
     "README.md"
   ],
   "scripts": {
-    "build": "npm run copy-rust-core && tsc",
-    "copy-rust-core": "mkdir -p rust-core && cp ../rust-core/index.js rust-core/ && cp ../rust-core/index.d.ts rust-core/ && cp ../rust-core/index.node rust-core/",
+    "prebuild": "npm run copy-rust-core-to-src",
+    "build": "tsc && npm run copy-rust-core-to-dist",
+    "copy-rust-core-to-src": "mkdir -p src/rust-core && cp ../rust-core/index.js src/rust-core/ && cp ../rust-core/index.d.ts src/rust-core/ && cp ../rust-core/index.node src/rust-core/",
+    "copy-rust-core-to-dist": "mkdir -p dist/rust-core && cp ../rust-core/index.js dist/rust-core/ && cp ../rust-core/index.d.ts dist/rust-core/ && cp ../rust-core/index.node dist/rust-core/",
     "test": "jest",
     "test:unit": "jest --testPathPatterns=unit --passWithNoTests",
     "test:integration": "jest --testPathPatterns=integration --passWithNoTests",
@@ -31,7 +30,7 @@
     "ci": "pnpm lint && pnpm test:coverage && pnpm build",
     "clean": "rimraf dist",
     "prepublishOnly": "pnpm clean && pnpm run ci",
-    "postbuild": "chmod +x dist/index.js"
+    "postbuild": "chmod +x dist/index.js && rm -rf src/rust-core"
   },
   "keywords": [
     "pdf",

@@ -5,7 +5,7 @@ import prettierConfig from 'eslint-config-prettier';
 export default tseslint.config(
   {
     // Global ignores
-    ignores: ['node_modules/**', 'dist/**'],
+    ignores: ['node_modules/**', 'dist/**', 'coverage/**', 'rust-core/**'],
   },
   // Base config for TypeScript files
   ...tseslint.configs.recommended,

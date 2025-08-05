@@ -6,9 +6,10 @@ import chalk from 'chalk';
 import fs from 'fs';
 import {
   getPageCount,
-  signPdf,
+  signPdfWithOptions,
   getPdfInfoBeforeSigning,
-} from '../rust-core/index.js';
+  SigningOptions,
+} from './rust-core/index.js';
 import ora from 'ora';
 
 // Utility function for showing loading animation using ora
@@ -234,16 +235,36 @@ program
         );
 
         // Create enhanced signature text with metadata
-        const enhancedSignature = `${signature} [fs:${fontSize}|c:${options.color || 'black'}|pos:${options.position || 'bottom-right'}|rot:${rotation}|op:${opacity}]`;
+        // Parse signing options for the Rust function
+        const signingOptions: SigningOptions = {
+          fontSize: fontSize,
+          color: options.color || 'black',
+          xPosition: options.xPosition
+            ? parseFloat(options.xPosition)
+            : undefined,
+          yPosition: options.yPosition
+            ? parseFloat(options.yPosition)
+            : undefined,
+          pages:
+            options.pages !== 'all'
+              ? options.pages
+                  .split(',')
+                  .map((p: string) => parseInt(p.trim()))
+                  .filter((p: number) => !isNaN(p) && p > 0)
+              : undefined,
+          position: options.position || 'bottom-right',
+          rotation: rotation,
+          opacity: opacity,
+        };
 
-        // Sign the PDF copy using the Rust function with enhanced signature text
+        // Sign the PDF copy using the advanced Rust function with proper options
         showProgress('✍️  Applying signature...', () =>
-          signPdf(outputPath, enhancedSignature),
+          signPdfWithOptions(outputPath, signature, signingOptions),
         );
 
         console.log(
           chalk.green('\n✅ Success!'),
-          chalk.bold('PDF signed with enhanced signature'),
+          chalk.bold('PDF signed with advanced options'),
         );
         console.log(chalk.blue('📁 Original:'), chalk.gray(absolutePath));
         console.log(chalk.blue('📁 Signed:'), chalk.green(outputPath));

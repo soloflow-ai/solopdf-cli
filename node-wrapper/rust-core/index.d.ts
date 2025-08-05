@@ -18,3 +18,7 @@ export interface SigningOptions {
 export declare function signPdf(filePath: string, signatureText: string): void
 
 export declare function signPdfLegacy(filePath: string, signatureText: string): void
+
+export declare function signPdfWithOptions(filePath: string, signatureText: string, options?: SigningOptions | undefined | null): void
+
+export declare function signPdfWithVisibleText(filePath: string, signatureText: string): void

@@ -5,7 +5,17 @@ const require = createRequire(import.meta.url);
 const {
   getPageCount,
   signPdf,
+  signPdfLegacy,
+  signPdfWithVisibleText,
+  signPdfWithOptions,
   getPdfInfoBeforeSigning,
 } = require("./index.node");
 
-export { getPageCount, signPdf, getPdfInfoBeforeSigning };
+export {
+  getPageCount,
+  signPdf,
+  signPdfLegacy,
+  signPdfWithVisibleText,
+  signPdfWithOptions,
+  getPdfInfoBeforeSigning,
+};
