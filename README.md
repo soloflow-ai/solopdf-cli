@@ -35,7 +35,7 @@ cd node-wrapper
 npm link
 ```
 
-**Future NPM Installation** (when published):
+**NPM Installation**:
 
 ```bash
 npm install -g solopdf-cli
@@ -112,7 +112,7 @@ The CLI provides the following commands (use `solopdf --help` for more details):
 
 ## Current Status
 
-SoloPDF CLI is currently in **alpha development** (v0.0.6-alpha). The tool is functional for basic PDF operations but the API and CLI are subject to change as we build and refine the tool.
+SoloPDF CLI is currently in **alpha development**. The tool is functional for basic PDF operations but the API and CLI are subject to change as we build and refine the tool.
 
 Our goal is to build a tool that is not only feature-rich but also incredibly easy to integrate into your projects or use directly from the terminal. We are building this project in the open, sharing our progress, and we welcome contributors of all levels to join us on this journey to build the best PDF tool available.
 
@@ -135,7 +135,7 @@ Our vision is for SoloPDF to be a one-stop shop for PDF tasks. The planned featu
 
 ## 🚀 Getting Started
 
-> **Note:** SoloPDF is currently in active development (v0.0.6-alpha). The API and CLI are subject to change as we build and refine the tool. We recommend checking back frequently for updates.
+> **Note:** SoloPDF is currently in active development. The API and CLI are subject to change as we build and refine the tool. We recommend checking back frequently for updates.
 
 ### Prerequisites
 

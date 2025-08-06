@@ -121,7 +121,7 @@ echo -e "${GREEN}🎉 All validation steps passed! Ready for publishing! 🎉${N
 echo ""
 echo "📦 Next steps:"
 echo "  1. Commit all changes: ${YELLOW}git add . && git commit -m 'Ready for release'${NC}"
-echo "  2. Create a new release tag: ${YELLOW}git tag v0.0.6-alpha${NC}"
+echo "  2. Create a new release tag: ${YELLOW}git tag v0.0.1${NC}"
 echo "  3. Push to GitHub: ${YELLOW}git push && git push --tags${NC}"
 echo "  4. Wait for CI to pass"
 echo "  5. Publish to npm: ${YELLOW}cd node-wrapper && npm publish${NC}"
