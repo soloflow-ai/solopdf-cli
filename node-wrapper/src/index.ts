@@ -29,7 +29,7 @@ const program = new Command();
 program
   .name('solopdf')
   .description('A CLI tool for PDF operations')
-  .version('0.0.1');
+  .version('0.0.2');
 
 // Show header only when help is requested or no command is given
 if (
