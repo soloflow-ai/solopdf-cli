@@ -9,6 +9,11 @@ const {
   signPdfWithVisibleText,
   signPdfWithOptions,
   getPdfInfoBeforeSigning,
+  generateSigningKeyPair,
+  getKeyInfoFromJson,
+  signPdfWithKey,
+  verifyPdfSignature,
+  getPdfChecksum,
 } = require("./index.node");
 
 export {
@@ -18,4 +23,9 @@ export {
   signPdfWithVisibleText,
   signPdfWithOptions,
   getPdfInfoBeforeSigning,
+  generateSigningKeyPair,
+  getKeyInfoFromJson,
+  signPdfWithKey,
+  verifyPdfSignature,
+  getPdfChecksum,
 };

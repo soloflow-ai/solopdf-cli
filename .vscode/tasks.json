@@ -1,0 +1,227 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Rust Core",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Build Node Wrapper",
+      "type": "shell",
+      "command": "cd node-wrapper && npm run build",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Build All",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build Rust Core", "Build Node Wrapper"],
+      "group": "build",
+      "isBackground": false
+    },
+    {
+      "label": "Rust Format Check",
+      "type": "shell",
+      "command": "cd rust-core && cargo fmt --check",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Rust Format Fix",
+      "type": "shell",
+      "command": "cd rust-core && cargo fmt",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Rust Clippy",
+      "type": "shell",
+      "command": "cd rust-core && cargo clippy --all-targets --all-features -- -D warnings",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Rust Unit Tests",
+      "type": "shell",
+      "command": "cd rust-core && cargo test --verbose",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Node Lint",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm lint",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Node Unit Tests",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test:unit",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Node Integration Tests",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test:integration",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Node CLI Tests",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test:cli",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Node Tests with Coverage",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test:coverage",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate Test PDFs",
+      "type": "shell",
+      "command": "cd rust-core && mkdir -p ../executed/generated-pdfs && cargo run --bin generate_test_pdfs -- ../executed/generated-pdfs",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Setup Test Environment",
+      "type": "shell",
+      "command": "node scripts/setup-execution-env.mjs",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Full Rust Validation",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Rust Format Check",
+        "Rust Clippy",
+        "Rust Unit Tests",
+        "Build Rust Core",
+        "Generate Test PDFs"
+      ],
+      "group": "test",
+      "isBackground": false
+    },
+    {
+      "label": "Run Full Node Validation",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Setup Test Environment",
+        "Node Lint",
+        "Node Unit Tests",
+        "Node Integration Tests",
+        "Node CLI Tests",
+        "Node Tests with Coverage",
+        "Build Node Wrapper"
+      ],
+      "group": "test",
+      "isBackground": false
+    },
+    {
+      "label": "Pre-Publish Validation",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Run Full Rust Validation", "Run Full Node Validation"],
+      "group": "test",
+      "isBackground": false
+    },
+    {
+      "label": "Test CI Locally (Rust Core)",
+      "type": "shell",
+      "command": "act --job rust-core",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Test CI Locally (Node Wrapper)",
+      "type": "shell",
+      "command": "act --job node-wrapper",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Test CI Locally (Full)",
+      "type": "shell",
+      "command": "act",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch Build Rust",
+      "type": "shell",
+      "command": "cd rust-core && cargo watch -x 'build'",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Watch Test Rust",
+      "type": "shell",
+      "command": "cd rust-core && cargo watch -x 'test'",
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Quick Pre-Publish Validation",
+      "type": "shell",
+      "command": "./scripts/validate-pre-publish.sh",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Quick Check",
+      "type": "shell",
+      "command": "./scripts/quick-check.sh",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate for Publish",
+      "type": "shell",
+      "command": "./scripts/validate-for-publish.sh",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Publish to NPM",
+      "type": "shell",
+      "command": "./scripts/publish.sh",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    }
+  ]
+}
