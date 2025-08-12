@@ -18,29 +18,38 @@ check_status() {
     fi
 }
 
-echo -e "${YELLOW}🔍 Rust formatting...${NC}"
-cd rust-core && cargo fmt --check
+echo -e "${YELLOW}🔍 Rust checks...${NC}"
+cd rust-core
+source ~/.cargo/env 2>/dev/null || true
+cargo fmt --check
 check_status "Format check"
 
-echo -e "${YELLOW}🔍 Rust clippy...${NC}"
 cargo clippy --all-targets --all-features -- -D warnings
 check_status "Clippy"
 
-echo -e "${YELLOW}🔍 Rust tests...${NC}"
 cargo test
 check_status "Tests"
 
-echo -e "${YELLOW}🔍 Building NAPI...${NC}"
-npx napi build --release
+echo -e "${YELLOW}🔍 Building Rust core...${NC}"
+npm install && npx napi build --release
 check_status "NAPI build"
 
-echo -e "${YELLOW}🔍 Verifying NAPI files...${NC}"
-if [ -f "index.node" ] && [ -f "index.js" ] && [ -f "index.d.ts" ]; then
-    echo -e "${GREEN}✅ NAPI files verified${NC}"
-else
-    echo -e "${RED}❌ Missing NAPI files${NC}"
-    exit 1
-fi
+cd ..
+
+echo -e "${YELLOW}🔍 Node.js checks...${NC}"
+cd node-wrapper
+pnpm install --frozen-lockfile
+check_status "Dependencies"
+
+pnpm lint
+check_status "Lint"
+
+pnpm test
+check_status "Tests"
+
+pnpm build
+check_status "Build"
+
 cd ..
 
 echo -e "${GREEN}✨ Quick validation passed! ✨${NC}"
