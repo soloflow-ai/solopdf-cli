@@ -1,0 +1,64 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Rust Core",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Build Node Wrapper",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm build",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Build All",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build Rust Core", "Build Node Wrapper"],
+      "group": "build",
+      "isBackground": false
+    },
+    {
+      "label": "Quick Check",
+      "type": "shell",
+      "command": "./scripts/quick-check.sh",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate for Publish",
+      "type": "shell",
+      "command": "./scripts/validate-for-publish.sh",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Publish to NPM",
+      "type": "shell",
+      "command": "./scripts/publish.sh",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Setup Test Environment",
+      "type": "shell",
+      "command": "node scripts/setup-execution-env.mjs",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    }
+  ]
+}

@@ -24,7 +24,7 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
-      - name: Setup Node.js (for NAPI)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
@@ -37,44 +37,19 @@ jobs:
             ~/.cargo/git
             rust-core/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('rust-core/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
-      - name: Check Rust formatting
+      - name: Validate Rust code
         working-directory: rust-core
-        run: cargo fmt --all -- --check
-
-      - name: Run Clippy
-        working-directory: rust-core
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Check Rust code
-        working-directory: rust-core
-        run: cargo check
-
-      - name: Run Rust unit tests
-        working-directory: rust-core
-        run: cargo test --verbose
-
-      - name: Run Rust integration tests with sample PDFs
-        working-directory: rust-core
-        run: cargo test integration_tests --verbose
-
-      - name: Build NAPI addon (debug)
-        working-directory: rust-core
-        run: cargo build
-
-      - name: Build NAPI addon (release)
-        working-directory: rust-core
-        run: cargo build --release
-
-      - name: Install NAPI CLI
-        working-directory: rust-core
-        run: npm install
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --verbose
 
       - name: Build NAPI module
         working-directory: rust-core
-        run: npx napi build --release
+        run: |
+          npm install
+          npx napi build --release
 
       - name: Generate test PDFs
         working-directory: rust-core
@@ -82,23 +57,14 @@ jobs:
           mkdir -p ../executed/generated-pdfs
           cargo run --bin generate_test_pdfs -- ../executed/generated-pdfs
 
-      - name: Upload Rust build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: rust-core-build
           path: |
-            rust-core/target/release/librust_core.so
-            rust-core/target/release/rust_core.node
             rust-core/index.node
             rust-core/index.js
-          if-no-files-found: ignore
-
-      - name: Upload generated PDFs
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-test-pdfs
-          path: executed/generated-pdfs/
-          retention-days: 7
+            rust-core/index.d.ts
 
   node-wrapper:
     runs-on: ubuntu-latest
@@ -121,96 +87,23 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: "node-wrapper/pnpm-lock.yaml"
 
-      - name: Install Node.js dependencies
-        working-directory: node-wrapper
-        run: pnpm install --frozen-lockfile
-
       - name: Download Rust artifacts
         uses: actions/download-artifact@v4
         with:
           name: rust-core-build
           path: rust-core/
 
-      - name: Setup test environment
-        run: node scripts/setup-execution-env.mjs
-
-      - name: Run linter
-        working-directory: node-wrapper
-        run: pnpm lint
-
-      - name: Run unit tests
-        working-directory: node-wrapper
-        run: pnpm test:unit
-
-      - name: Run integration tests
-        working-directory: node-wrapper
-        run: pnpm test:integration
-
-      - name: Run CLI tests
-        working-directory: node-wrapper
-        run: pnpm test:cli
-
-      - name: Run tests with coverage
-        working-directory: node-wrapper
-        run: pnpm test:coverage
-
-      - name: Build TypeScript
-        working-directory: node-wrapper
-        run: pnpm build
+      - name: Setup and test
+        run: |
+          node scripts/setup-execution-env.mjs
+          cd node-wrapper
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm test
+          pnpm build
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         with:
           directory: node-wrapper/coverage
           flags: node-tests
-          name: node-coverage
-
-      - name: Upload Node.js build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-wrapper-build
-          path: node-wrapper/dist/
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: node-test-results
-          path: |
-            node-wrapper/coverage/
-            node-wrapper/jest-results.xml
-          retention-days: 7
-
-  integration-test:
-    runs-on: ubuntu-latest
-    name: Integration Test
-    needs: [rust-core, node-wrapper]
-    if: success()
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.x"
-
-      - name: Download Rust artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: rust-core-build
-          path: rust-core/
-
-      - name: Download Node.js artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: node-wrapper-build
-          path: node-wrapper/dist/
-
-      - name: Verify artifacts exist
-        run: |
-          echo "Checking Rust artifacts:"
-          find rust-core/ -name "*.node" -o -name "*.so" || echo "No Rust artifacts found"
-          echo "Checking Node.js artifacts:"
-          find node-wrapper/dist/ -type f || echo "No Node.js artifacts found"

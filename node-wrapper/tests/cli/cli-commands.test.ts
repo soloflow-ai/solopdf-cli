@@ -78,9 +78,9 @@ describe('CLI Commands', () => {
       const output = execSync(`node ${cliPath} sign --help`, {
         encoding: 'utf8',
       });
-      expect(output).toContain('Sign a PDF file');
+      expect(output).toContain('watermark');
       expect(output).toContain('<file>');
-      expect(output).toContain('<signature>');
+      expect(output).toContain('<text>');
     });
   });
 
@@ -199,7 +199,7 @@ describe('CLI Commands', () => {
         );
 
         expect(output).toContain('Success');
-        expect(output).toContain('PDF signed');
+        expect(output).toContain('watermarked');
         expect(output).toContain(signature);
         expect(output).toContain('Document has');
         expect(output).toContain('pages');
@@ -224,7 +224,7 @@ describe('CLI Commands', () => {
         );
 
         expect(output).toContain('Success');
-        expect(output).toContain('PDF signed');
+        expect(output).toContain('watermarked');
         expect(fs.existsSync(outputPath)).toBe(true);
       }
     });
@@ -247,7 +247,7 @@ describe('CLI Commands', () => {
         );
 
         expect(output).toContain('Success');
-        expect(output).toContain('PDF signed');
+        expect(output).toContain('watermarked');
         expect(fs.existsSync(outputPath)).toBe(true);
       }
     });
@@ -269,7 +269,7 @@ describe('CLI Commands', () => {
         );
 
         expect(output).toContain('Success');
-        expect(output).toContain('PDF signed');
+        expect(output).toContain('watermarked');
         expect(fs.existsSync(outputPath)).toBe(true);
       }
     });

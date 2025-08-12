@@ -1,9 +1,12 @@
 use napi_derive::napi;
 
 // Declare modules
+pub mod crypto;
 #[path = "page-count.rs"]
 pub mod page_count;
 pub mod sign;
+
+pub use crypto::*;
 
 // Re-export SigningOptions from sign module
 pub use sign::SigningOptions;
@@ -16,6 +19,76 @@ pub mod test_utils;
 #[napi]
 pub fn get_page_count(file_path: String) -> napi::Result<u32> {
     page_count::get_page_count(file_path)
+}
+
+/// Generate a new cryptographic key pair for digital signing
+#[napi]
+pub fn generate_signing_key_pair() -> napi::Result<String> {
+    let key_pair = crypto::generate_key_pair()
+        .map_err(|e| napi::Error::from_reason(format!("Key generation failed: {e}")))?;
+
+    serde_json::to_string_pretty(&key_pair)
+        .map_err(|e| napi::Error::from_reason(format!("Serialization failed: {e}")))
+}
+
+/// Get key information (public key and fingerprint) from a key pair JSON
+#[napi]
+pub fn get_key_info_from_json(key_pair_json: String) -> napi::Result<String> {
+    let key_pair: crypto::KeyPair = serde_json::from_str(&key_pair_json)
+        .map_err(|e| napi::Error::from_reason(format!("Invalid key pair JSON: {e}")))?;
+
+    let key_info = crypto::get_key_info(&key_pair)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to get key info: {e}")))?;
+
+    serde_json::to_string_pretty(&key_info)
+        .map_err(|e| napi::Error::from_reason(format!("Serialization failed: {e}")))
+}
+
+/// Sign a PDF with digital signature using a private key
+#[napi]
+pub fn sign_pdf_with_key(
+    input_path: String,
+    output_path: String,
+    private_key_b64: String,
+    signature_text: Option<String>,
+) -> napi::Result<String> {
+    let key_pair = crypto::load_key_pair_from_string(&private_key_b64)
+        .map_err(|e| napi::Error::from_reason(format!("Invalid private key: {e}")))?;
+
+    let signed_doc = crypto::sign_pdf_digitally(
+        &input_path,
+        &output_path,
+        &key_pair,
+        signature_text.as_deref(),
+    )
+    .map_err(|e| napi::Error::from_reason(format!("Signing failed: {e}")))?;
+
+    serde_json::to_string_pretty(&signed_doc)
+        .map_err(|e| napi::Error::from_reason(format!("Serialization failed: {e}")))
+}
+
+/// Verify a digital signature
+#[napi]
+pub fn verify_pdf_signature(
+    file_path: String,
+    signature_info_json: String,
+    public_key_b64: String,
+) -> napi::Result<String> {
+    let signature_info: crypto::SignatureInfo = serde_json::from_str(&signature_info_json)
+        .map_err(|e| napi::Error::from_reason(format!("Invalid signature info: {e}")))?;
+
+    let result = crypto::verify_signature(&file_path, &signature_info, &public_key_b64)
+        .map_err(|e| napi::Error::from_reason(format!("Verification failed: {e}")))?;
+
+    serde_json::to_string_pretty(&result)
+        .map_err(|e| napi::Error::from_reason(format!("Serialization failed: {e}")))
+}
+
+/// Get file checksum for user verification
+#[napi]
+pub fn get_pdf_checksum(file_path: String) -> napi::Result<String> {
+    crypto::get_file_checksum(&file_path)
+        .map_err(|e| napi::Error::from_reason(format!("Checksum generation failed: {e}")))
 }
 
 #[napi]

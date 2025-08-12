@@ -13,24 +13,16 @@
     "README.md"
   ],
   "scripts": {
-    "prebuild": "npm run copy-rust-core-to-src",
-    "build": "npm run copy-rust-core-to-src && tsc && npm run copy-rust-core-to-dist",
-    "copy-rust-core-to-src": "mkdir -p src/rust-core && cp ../rust-core/index.js src/rust-core/ && cp ../rust-core/index.d.ts src/rust-core/ && cp ../rust-core/index.node src/rust-core/",
-    "copy-rust-core-to-dist": "mkdir -p dist/rust-core && cp ../rust-core/index.js dist/rust-core/ && cp ../rust-core/index.d.ts dist/rust-core/ && cp ../rust-core/index.node dist/rust-core/",
-    "test": "jest",
-    "test:unit": "jest --testPathPatterns=unit --passWithNoTests",
+    "build": "npm run copy-rust-core && tsc && npm run finalize-build",
+    "copy-rust-core": "mkdir -p src/rust-core dist/rust-core && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node src/rust-core/ && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node dist/rust-core/",
+    "finalize-build": "chmod +x dist/index.js && rm -rf src/rust-core",
+    "test": "jest --coverage",
+    "test:unit": "jest --testPathPatterns=unit",
     "test:integration": "jest --testPathPatterns=integration --passWithNoTests",
-    "test:cli": "jest --testPathPatterns=cli --passWithNoTests",
-    "test:coverage": "jest --coverage",
-    "test:watch": "jest --watch",
-    "setup-test-env": "node ../scripts/setup-execution-env.mjs",
+    "test:cli": "jest --testPathPatterns=cli",
     "lint": "eslint . --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "dev": "ts-node src/index.ts",
-    "ci": "pnpm lint && pnpm test:coverage && pnpm build",
     "clean": "rimraf dist",
-    "prepublishOnly": "pnpm clean && pnpm run ci",
-    "postbuild": "chmod +x dist/index.js && rm -rf src/rust-core"
+    "prepublishOnly": "pnpm clean && pnpm lint && pnpm test && pnpm build"
   },
   "keywords": [
     "pdf",
