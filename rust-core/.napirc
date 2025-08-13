@@ -25,7 +25,22 @@
       "MACOSX_DEPLOYMENT_TARGET": "10.12"
     },
     "aarch64-apple-darwin": {
-      "MACOSX_DEPLOYMENT_TARGET": "11.0"
+      "MACOSX_DEPLOYMENT_TARGET": "11.0",
+      "CC": "clang",
+      "CXX": "clang++",
+      "AR": "ar"
+    }
+  },
+  "package": {
+    "name": "rust-core",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu"
+      ]
     }
   }
 }
