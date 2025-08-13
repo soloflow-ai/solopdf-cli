@@ -1,11 +1,13 @@
 use napi_derive::napi;
 
 // Declare modules
+#[cfg(feature = "crypto")]
 pub mod crypto;
 #[path = "page-count.rs"]
 pub mod page_count;
 pub mod sign;
 
+#[cfg(feature = "crypto")]
 pub use crypto::*;
 
 // Re-export SigningOptions from sign module
@@ -22,6 +24,7 @@ pub fn get_page_count(file_path: String) -> napi::Result<u32> {
 }
 
 /// Generate a new cryptographic key pair for digital signing
+#[cfg(feature = "crypto")]
 #[napi]
 pub fn generate_signing_key_pair() -> napi::Result<String> {
     let key_pair = crypto::generate_key_pair()
@@ -32,6 +35,7 @@ pub fn generate_signing_key_pair() -> napi::Result<String> {
 }
 
 /// Get key information (public key and fingerprint) from a key pair JSON
+#[cfg(feature = "crypto")]
 #[napi]
 pub fn get_key_info_from_json(key_pair_json: String) -> napi::Result<String> {
     let key_pair: crypto::KeyPair = serde_json::from_str(&key_pair_json)
@@ -45,6 +49,7 @@ pub fn get_key_info_from_json(key_pair_json: String) -> napi::Result<String> {
 }
 
 /// Sign a PDF with digital signature using a private key
+#[cfg(feature = "crypto")]
 #[napi]
 pub fn sign_pdf_with_key(
     input_path: String,
@@ -68,6 +73,7 @@ pub fn sign_pdf_with_key(
 }
 
 /// Verify a digital signature
+#[cfg(feature = "crypto")]
 #[napi]
 pub fn verify_pdf_signature(
     file_path: String,
@@ -85,6 +91,7 @@ pub fn verify_pdf_signature(
 }
 
 /// Get file checksum for user verification
+#[cfg(feature = "crypto")]
 #[napi]
 pub fn get_pdf_checksum(file_path: String) -> napi::Result<String> {
     crypto::get_file_checksum(&file_path)

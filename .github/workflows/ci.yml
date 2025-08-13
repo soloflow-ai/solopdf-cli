@@ -99,7 +99,7 @@ jobs:
           echo "npm_config_disturl=https://nodejs.org/download/release/" >> $GITHUB_ENV
           echo "npm_config_cache=/tmp/.npm" >> $GITHUB_ENV
           echo "npm_config_build_from_source=true" >> $GITHUB_ENV
-          
+
           # Critical: Set NAPI-specific environment for cross-compilation
           echo "NAPI_BUILD_ARCH=arm64" >> $GITHUB_ENV
           echo "NAPI_BUILD_PLATFORM=darwin" >> $GITHUB_ENV
@@ -117,17 +117,17 @@ jobs:
           # Install dependencies first
           npm install
           
-          # For ARM64 cross-compilation, we need to ensure the build system uses the correct configuration
+          # Build for the target
+          echo "Building for target: ${{ matrix.target }}"
+          
+          # For cross-compilation targets, disable crypto features to avoid ring build issues
           if [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
-            echo "Building for ARM64 with cross-compilation..."
-            # Use the napi build with explicit environment
-            npx napi build --release --target ${{ matrix.target }} --platform darwin --arch arm64
+            echo "Cross-compiling ARM64 - disabling crypto features to avoid ring compilation issues"
+            npx napi build --release --platform --target ${{ matrix.target }} --no-default-features
           else
-            echo "Building for native target..."
-            npx napi build --release --target ${{ matrix.target }}
-          fi
-
-      - name: Verify build output
+            echo "Native compilation - including all features"
+            npx napi build --release --platform --target ${{ matrix.target }}
+          fi      - name: Verify build output
         working-directory: rust-core
         shell: bash
         run: |

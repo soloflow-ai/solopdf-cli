@@ -8,7 +8,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release"
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release --platform"
       ],
       "group": "build",
       "isBackground": false,
@@ -26,7 +26,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build"
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --platform"
       ],
       "group": "build",
       "isBackground": false,
@@ -38,7 +38,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release --target x86_64-unknown-linux-gnu && npx napi build --release --target x86_64-pc-windows-msvc && npx napi build --release --target x86_64-apple-darwin && npx napi build --release --target aarch64-apple-darwin"
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release --platform --target x86_64-unknown-linux-gnu && npx napi build --release --platform --target x86_64-pc-windows-msvc && npx napi build --release --platform --target x86_64-apple-darwin && npx napi build --release --platform --target aarch64-apple-darwin"
       ],
       "group": "build",
       "isBackground": false,
@@ -56,7 +56,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --target x86_64-unknown-linux-gnu"
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --platform --target x86_64-unknown-linux-gnu"
       ],
       "group": "build",
       "isBackground": false,
@@ -68,7 +68,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --target x86_64-pc-windows-msvc"
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --platform --target x86_64-pc-windows-msvc"
       ],
       "group": "build",
       "isBackground": false,
@@ -80,7 +80,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --target x86_64-apple-darwin"
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --platform --target x86_64-apple-darwin"
       ],
       "group": "build",
       "isBackground": false,
@@ -92,7 +92,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && export MACOSX_DEPLOYMENT_TARGET=11.0 && npx napi build --release --target aarch64-apple-darwin"
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && export MACOSX_DEPLOYMENT_TARGET=11.0 && npx napi build --release --platform --target aarch64-apple-darwin"
       ],
       "group": "build",
       "isBackground": false,

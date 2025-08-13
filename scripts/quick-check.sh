@@ -31,7 +31,7 @@ cargo test
 check_status "Tests"
 
 echo -e "${YELLOW}🔍 Building Rust core...${NC}"
-npm install && npx napi build --release
+npm install && npx napi build --release --platform
 check_status "NAPI build"
 
 cd ..
