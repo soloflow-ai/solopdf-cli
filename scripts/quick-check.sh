@@ -38,7 +38,12 @@ cd ..
 
 echo -e "${YELLOW}🔍 Node.js checks...${NC}"
 cd node-wrapper
-pnpm install --frozen-lockfile
+# For local development, allow lockfile updates
+if [ "$CI" = "true" ]; then
+    pnpm install --frozen-lockfile
+else
+    pnpm install
+fi
 check_status "Dependencies"
 
 pnpm lint

@@ -1,6 +1,6 @@
 {
   "name": "solopdf-cli",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A fast PDF manipulation CLI tool powered by Rust and Node.js",
   "main": "dist/index.js",
   "type": "module",
@@ -67,5 +67,11 @@
     "chalk": "^5.5.0",
     "commander": "^14.0.0",
     "ora": "^8.2.0"
+  },
+  "optionalDependencies": {
+    "solopdf-cli-win32-x64-msvc": "0.0.1",
+    "solopdf-cli-linux-x64-gnu": "0.0.1",
+    "solopdf-cli-darwin-x64": "0.0.1",
+    "solopdf-cli-darwin-arm64": "0.0.1"
   }
 }

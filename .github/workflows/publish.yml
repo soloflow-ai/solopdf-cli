@@ -6,11 +6,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
-    name: Build and Publish Package
-    permissions:
-      contents: read
+  build-binaries:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            name: win32-x64-msvc
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: linux-x64-gnu
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            name: darwin-x64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            name: darwin-arm64
+
+    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.name }}
 
     steps:
       - name: Checkout code
@@ -20,6 +34,67 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Build binary
+        working-directory: rust-core
+        run: |
+          npm install
+          npx napi build --release --target ${{ matrix.target }}
+
+      - name: Create platform package
+        run: |
+          mkdir -p platform-packages/solopdf-cli-${{ matrix.name }}
+          cd platform-packages/solopdf-cli-${{ matrix.name }}
+
+          cat > package.json << EOF
+          {
+            "name": "solopdf-cli-${{ matrix.name }}",
+            "version": "0.0.3",
+            "description": "SoloPDF CLI native binary for ${{ matrix.name }}",
+            "main": "index.node",
+            "files": ["index.node"],
+            "license": "ISC",
+            "repository": {
+              "type": "git",
+              "url": "https://github.com/soloflow-ai/solopdf-cli.git"
+            },
+            "cpu": ["${{ matrix.name == 'darwin-arm64' && 'arm64' || 'x64' }}"],
+            "os": ["${{ matrix.name == 'win32-x64-msvc' && 'win32' || matrix.name == 'linux-x64-gnu' && 'linux' || 'darwin' }}"]
+          }
+          EOF
+
+          cp ../../rust-core/index.node .
+
+      - name: Publish platform package
+        working-directory: platform-packages/solopdf-cli-${{ matrix.name }}
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.name }}
+          path: rust-core/index.node
+
+  publish-main:
+    runs-on: ubuntu-latest
+    name: Publish Main Package
+    needs: build-binaries
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -32,19 +107,22 @@ jobs:
           cache-dependency-path: "node-wrapper/pnpm-lock.yaml"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Build Rust core
-        working-directory: rust-core
-        run: |
-          npm install
-          npx napi build --release
+      - name: Download Linux binary for local testing
+        uses: actions/download-artifact@v4
+        with:
+          name: binary-linux-x64-gnu
+          path: rust-core/
 
-      - name: Build and publish Node wrapper
+      - name: Install dependencies and build
         working-directory: node-wrapper
         run: |
           pnpm install --frozen-lockfile
           pnpm lint
           pnpm test
           pnpm build
-          pnpm publish --access public --no-git-checks
+
+      - name: Publish main package
+        working-directory: node-wrapper
+        run: pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

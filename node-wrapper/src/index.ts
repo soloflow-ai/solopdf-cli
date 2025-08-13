@@ -9,7 +9,7 @@ import {
   signPdfWithOptions,
   getPdfInfoBeforeSigning,
   SigningOptions,
-} from './rust-core/index.js';
+} from './platform-loader.js';
 import ora from 'ora';
 
 // Utility function for showing loading animation using ora
@@ -553,7 +553,7 @@ program
   .argument('<file>', 'The path to the PDF file')
   .action(async (file: string) => {
     try {
-      const core = await import('./rust-core/index.js');
+      const core = await import('./platform-loader.js');
 
       const absolutePath = path.resolve(file);
       console.log(chalk.blue('🔍 Analyzing file:'), chalk.white(absolutePath));
@@ -601,7 +601,7 @@ program
   )
   .action(async (options: { output: string }) => {
     try {
-      const core = await import('./rust-core/index.js');
+      const core = await import('./platform-loader.js');
 
       console.log(chalk.blue('🔑 Generating signing key pair...'));
 
@@ -653,7 +653,7 @@ program
       options: { text?: string; saveSig?: string },
     ) => {
       try {
-        const core = await import('./rust-core/index.js');
+        const core = await import('./platform-loader.js');
 
         const absolutePath = path.resolve(file);
         const outputPath = path.resolve(output);
@@ -746,7 +746,7 @@ program
   )
   .action(async (file: string, signature: string, keyfile: string) => {
     try {
-      const core = await import('./rust-core/index.js');
+      const core = await import('./platform-loader.js');
 
       const filePath = path.resolve(file);
       const signaturePath = path.resolve(signature);
