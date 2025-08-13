@@ -35,6 +35,11 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
+          components: rustfmt, clippy
+
+      - name: Install additional Rust targets
+        run: |
+          rustup target add ${{ matrix.target }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -45,10 +50,41 @@ jobs:
           node-version: "22.x"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Install Node.js headers (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Set minimum macOS deployment target for compatibility
+          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+
+          # Install Node.js development headers
+          NODE_VERSION=$(node --version | sed 's/v//')
+          echo "Installing Node.js headers for version ${NODE_VERSION}"
+
+          # Download Node.js headers
+          curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-headers.tar.gz" -o /tmp/node-headers.tar.gz
+          tar -xzf /tmp/node-headers.tar.gz -C /tmp/
+
+          # Set environment variables for NAPI build
+          echo "NODE_INCLUDE_PATH=/tmp/node-v${NODE_VERSION}/include/node" >> $GITHUB_ENV
+          echo "NAPI_RS_SKIP_LINK=1" >> $GITHUB_ENV
+
       - name: Build binary
         working-directory: rust-core
+        env:
+          # macOS compatibility settings
+          MACOSX_DEPLOYMENT_TARGET: ${{ env.MACOSX_DEPLOYMENT_TARGET }}
+          NODE_INCLUDE_PATH: ${{ env.NODE_INCLUDE_PATH }}
+          NAPI_RS_SKIP_LINK: ${{ env.NAPI_RS_SKIP_LINK }}
         run: |
           npm install
+
+          # Additional macOS configuration
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            # Ensure we have the right Node.js headers
+            export LDFLAGS="-L$(brew --prefix)/lib"
+            export CPPFLAGS="-I$(brew --prefix)/include"
+          fi
+
           npx napi build --release --target ${{ matrix.target }}
 
       - name: Create platform package

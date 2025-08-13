@@ -1,48 +1,95 @@
 # SoloPDF CLI 📄✨
 
+[![npm version](https://img.shields.io/npm/v/solopdf-cli.svg)](https://www.npmjs.com/package/solopdf-cli)
+[![downloads](https://img.shields.io/npm/dm/solopdf-cli.svg)](https://www.npmjs.com/package/solopdf-cli)
+[![license](https://img.shields.io/npm/l/solopdf-cli.svg)](https://github.com/soloflow-ai/solopdf-cli/blob/main/LICENSE)
+[![build status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/soloflow-ai/solopdf-cli)
+[![node version](https://img.shields.io/node/v/solopdf-cli.svg)](https://nodejs.org)
+[![rust](https://img.shields.io/badge/powered%20by-rust-orange.svg)](https://www.rust-lang.org/)
+
 A blazingly fast PDF manipulation CLI tool powered by Rust and Node.js.
 
 ## Features
 
 - 🚀 **Ultra-fast**: Core operations powered by Rust for maximum performance
 - 📄 **PDF Analysis**: Get page counts and basic PDF information
-- ✍️ **PDF Watermarking**: Add text watermarks to PDF documents
-- 🔐 **Digital Signatures**: Create and verify cryptographic digital signatures
-- 🔧 **Easy to Use**: Simple command-line interface
+- ✍️ **PDF Watermarking**: Add text watermarks to PDF documents with advanced options
+- 🔐 **Digital Signatures**: Create and verify cryptographic digital signatures (ECDSA P-256)
+- 🔍 **File Integrity**: Generate and verify checksums for tamper detection
+- 🔧 **Easy to Use**: Simple command-line interface with helpful progress indicators
 - 🌐 **Cross-platform**: Works on Linux, macOS, and Windows
+- 🛡️ **Secure**: Industry-standard cryptography with tamper detection
 
 ## Installation
 
+### NPM Installation (Recommended)
+
+```bash
+npm install -g solopdf-cli
+```
+
+**Or using other package managers:**
+
+```bash
+# Using yarn
+yarn global add solopdf-cli
+
+# Using pnpm
+pnpm add -g solopdf-cli
+```
+
+> **Note:** Once installed, the tool is available as both `solopdf` and `solopdf-cli` commands.
+
+### Building from Source
+
 > **Note:** SoloPDF CLI is currently in alpha development. To install from source:
 
-1. Clone the repository:
+1. **Prerequisites:**
+
+   - Node.js 18.0.0 or higher
+   - pnpm 8.0.0 or higher
+   - Rust toolchain (automatically managed)
+
+2. **Clone and build:**
 
 ```bash
 git clone https://github.com/soloflow-ai/solopdf-cli.git
 cd solopdf-cli
-```
-
-2. Install dependencies and build:
-
-```bash
 pnpm install
 pnpm build:all
 ```
 
-3. Link for global usage:
+3. **Link for global usage:**
 
 ```bash
 cd node-wrapper
 npm link
 ```
 
-**NPM Installation**:
+4. **Test the installation:**
 
 ```bash
-npm install -g solopdf-cli
+solopdf --help
 ```
 
-> **Note:** Once installed, the tool is available as both `solopdf` and `solopdf-cli` commands.
+## Quick Start
+
+```bash
+# Get page count of a PDF
+solopdf pages document.pdf
+
+# Get detailed PDF information
+solopdf info document.pdf
+
+# Add a watermark to a PDF
+solopdf watermark input.pdf "Confidential" output.pdf
+
+# Generate cryptographic keys for signing
+solopdf generate-key -o my-keys.json
+
+# Sign a PDF with digital signature
+solopdf sign-digital contract.pdf signed-contract.pdf my-keys.json
+```
 
 ## Usage
 
@@ -88,7 +135,11 @@ Add a text watermark to a PDF document. The command takes three arguments:
 **Example with options:**
 
 ```bash
-solopdf watermark document.pdf "John Doe" watermarked.pdf --font-size 14 --position "top-right" --pages "1,3"
+solopdf watermark document.pdf "DRAFT" watermarked.pdf \
+  --font-size 14 \
+  --position "top-right" \
+  --pages "1,3" \
+  --opacity 0.7
 ```
 
 ### Legacy Sign Command
@@ -211,30 +262,60 @@ When you sign a PDF, you get:
 
 The CLI provides the following commands (use `solopdf --help` for more details):
 
-| Command            | Description                        | Syntax                                                                   |
-| ------------------ | ---------------------------------- | ------------------------------------------------------------------------ |
-| `pages`            | Get the number of pages in a PDF   | `solopdf pages <file.pdf>`                                               |
-| `info`             | Get detailed PDF information       | `solopdf info <file.pdf>`                                                |
-| `watermark`        | Add a text watermark to a PDF      | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]`          |
-| `sign`             | (Legacy) Add a text watermark      | `solopdf sign <input.pdf> "<text>" <output.pdf> [options]`               |
-| `generate-key`     | Generate cryptographic key pair    | `solopdf generate-key [-o keypair.json]`                                 |
-| `sign-digital`     | Create a digital signature         | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]` |
-| `verify-signature` | Verify a digital signature         | `solopdf verify-signature <file.pdf> <sig.json> <keypair.json>`          |
-| `checksum`         | Get file checksum for verification | `solopdf checksum <file.pdf>`                                            |
-| `--help`           | Show help information              | `solopdf --help` or `solopdf <command> --help`                           |
-| `--version`        | Show version number                | `solopdf --version`                                                      |
+| Command            | Status | Description                        | Syntax                                                                   |
+| ------------------ | ------ | ---------------------------------- | ------------------------------------------------------------------------ |
+| `pages`            | ✅     | Get the number of pages in a PDF   | `solopdf pages <file.pdf>`                                               |
+| `info`             | ✅     | Get detailed PDF information       | `solopdf info <file.pdf>`                                                |
+| `watermark`        | ✅     | Add a text watermark to a PDF      | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]`          |
+| `sign`             | ⚠️     | (Legacy) Add a text watermark      | `solopdf sign <input.pdf> "<text>" <output.pdf> [options]`               |
+| `generate-key`     | ✅     | Generate cryptographic key pair    | `solopdf generate-key [-o keypair.json]`                                 |
+| `sign-digital`     | ✅     | Create a digital signature         | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]` |
+| `verify-signature` | ✅     | Verify a digital signature         | `solopdf verify-signature <file.pdf> <sig.json> <keypair.json>`          |
+| `checksum`         | ✅     | Get file checksum for verification | `solopdf checksum <file.pdf>`                                            |
+| `--help`           | ✅     | Show help information              | `solopdf --help` or `solopdf <command> --help`                           |
+| `--version`        | ✅     | Show version number                | `solopdf --version`                                                      |
+
+**Legend:**
+
+- ✅ Fully implemented and tested
+- ⚠️ Deprecated (use alternatives)
+- 🚧 Planned feature (not yet implemented)
 
 ## Requirements
 
-- Node.js 18.0.0 or higher
-- pnpm 8.0.0 or higher (for building from source)
-- The Rust core is pre-compiled and included in the package
+- **Node.js** 18.0.0 or higher
+- **Operating System**: Linux, macOS, or Windows
+- **Memory**: ~50MB RAM for typical operations
+- **Storage**: ~10MB for installation
+
+> **Note:** The Rust core is pre-compiled and included in the package - no additional dependencies required!
 
 ## Current Status
 
-SoloPDF CLI is currently in **alpha development**. The tool is functional for basic PDF operations but the API and CLI are subject to change as we build and refine the tool.
+SoloPDF CLI is currently in **alpha development** (v0.0.3). The tool is functional for core PDF operations with ongoing feature development.
 
-Our goal is to build a tool that is not only feature-rich but also incredibly easy to integrate into your projects or use directly from the terminal. We are building this project in the open, sharing our progress, and we welcome contributors of all levels to join us on this journey to build the best PDF tool available.
+### ✅ Currently Working
+
+- **PDF Analysis**: Page counting and basic information extraction
+- **Watermarking**: Advanced text watermarking with positioning, rotation, and opacity
+- **Digital Signatures**: Full cryptographic signing with ECDSA P-256
+- **Signature Verification**: Tamper detection and authenticity validation
+- **File Integrity**: Checksum generation for manual verification
+- **Cross-platform**: Pre-built binaries for Linux, macOS, and Windows
+
+### 🚧 Planned Features (Roadmap)
+
+- **PDF Creation**: Generate PDFs from scratch with declarative API
+- **PDF Merging**: Combine multiple documents
+- **PDF Splitting**: Extract pages or split into multiple files
+- **HTML to PDF**: Convert web pages and HTML files
+- **Text Extraction**: Parse and extract text content
+- **Form Filling**: Programmatically fill interactive PDF forms
+- **Advanced Editing**: Rotate, reorder, and manipulate pages
+- **Image Integration**: Add images as watermarks or content
+- **Optimization**: Compress and optimize file sizes
+
+Our goal is to build a comprehensive, high-performance PDF toolkit that's both powerful for developers and accessible for everyday users.
 
 ---
 
@@ -247,7 +328,7 @@ Our vision is for SoloPDF to be a one-stop shop for PDF tasks. The planned featu
 - **Generate from HTML:** Convert any HTML file or live URL directly into a pixel-perfect PDF, preserving styles, images, and layout.
 - **Customize Content:** Add text with specific fonts and formatting, overlay images as watermarks or figures, and draw basic shapes to annotate or structure your documents with precision.
 - **Form Filling:** Programmatically find and fill out interactive PDF forms, saving time and automating workflows.
-- **Digital Signatures:** Add cryptographically secure digital signatures to documents, ensuring authenticity and integrity.
+- **Digital Signatures:** ✅ Add cryptographically secure digital signatures to documents, ensuring authenticity and integrity.
 - **Text Extraction:** Easily extract and parse text content from PDF files for data processing, indexing, or analysis.
 - **Optimization:** Reduce file size for easier sharing and faster web loading by optimizing images, removing redundant data, and compressing content without sacrificing quality.
 
@@ -255,106 +336,158 @@ Our vision is for SoloPDF to be a one-stop shop for PDF tasks. The planned featu
 
 ## 🚀 Getting Started
 
-> **Note:** SoloPDF is currently in active development. The API and CLI are subject to change as we build and refine the tool. We recommend checking back frequently for updates.
+### Quick Installation
 
-### Prerequisites
+```bash
+npm install -g solopdf-cli
+```
+
+### Quick Test
+
+```bash
+# Download a sample PDF or use your own
+solopdf pages sample.pdf
+
+# Add a watermark
+solopdf watermark sample.pdf "SAMPLE" watermarked.pdf
+
+# Get detailed info
+solopdf info watermarked.pdf
+```
+
+### Building from Source (Advanced)
+
+> **For contributors or those who want the latest development version:**
+
+**Prerequisites:**
 
 - Node.js (v18.x or later)
 - pnpm (v8.x or later)
+- Rust toolchain (auto-managed via rustup)
 
-### Building from Source
-
-1. Clone the repository:
+**Steps:**
 
 ```bash
+# 1. Clone the repository
 git clone https://github.com/soloflow-ai/solopdf-cli.git
 cd solopdf-cli
-```
 
-2. Install dependencies:
-
-```bash
+# 2. Install dependencies and build
 pnpm install
-```
-
-3. Build the Rust core and Node.js wrapper:
-
-```bash
 pnpm build:all
-```
 
-4. Link for global usage:
-
-```bash
+# 3. Link for global usage
 cd node-wrapper
 npm link
-```
 
-5. Test the installation:
-
-```bash
+# 4. Test the installation
 solopdf --help
-```
-
-### Quick Start
-
-Once installed, you can use these commands:
-
-```bash
-# Get page count of a PDF
-solopdf pages sample.pdf
-
-# Get detailed PDF information
-solopdf info sample.pdf
-
-# Sign a PDF with text
-solopdf sign input.pdf "Signed by John Doe" output.pdf
 ```
 
 ---
 
 ## 💻 Simple Usage (CLI) - Roadmap Vision
 
-Here's our vision for how simple the CLI will be once fully developed. **Note:** Most of these commands are not yet implemented. Currently available: `pages`, `info`, and `sign`.
+Here's our vision for how simple the CLI will be once fully developed. **Note:** Some of these commands are not yet implemented.
 
-**Merge two PDFs:** _(Coming soon)_
+**Currently Available Commands:**
 
 ```bash
-solopdf merge -in file1.pdf file2.pdf -out merged.pdf
+# ✅ PDF Analysis
+solopdf pages document.pdf
+solopdf info document.pdf
+
+# ✅ Watermarking
+solopdf watermark input.pdf "Confidential" output.pdf
+
+# ✅ Digital Signatures
+solopdf generate-key -o keys.json
+solopdf sign-digital contract.pdf signed.pdf keys.json
+solopdf verify-signature signed.pdf signature.json keys.json
+solopdf checksum document.pdf
 ```
 
-**Convert HTML to PDF:** _(Coming soon)_
+**Future Commands (Coming Soon):**
 
 ```bash
-solopdf from-html -in https://example.com -out example.pdf
-```
+# 🚧 PDF Manipulation
+solopdf merge file1.pdf file2.pdf -o merged.pdf
+solopdf split large.pdf -o output-dir/
+solopdf extract-pages input.pdf 1-5 -o pages.pdf
 
-**Add a signature:** _(Currently available with different syntax)_
+# 🚧 Content Generation
+solopdf from-html https://example.com -o example.pdf
+solopdf create-pdf template.json -o document.pdf
 
-```bash
-solopdf sign -in document.pdf -signature signature.png -pos "bottom-right" -out signed.pdf
-```
+# 🚧 Text Processing
+solopdf extract-text report.pdf -o report.txt
+solopdf fill-form template.pdf data.json -o filled.pdf
 
-_Current syntax:_ `solopdf sign input.pdf "signature text" output.pdf`
-
-**Extract text from a PDF:** _(Coming soon)_
-
-```bash
-solopdf extract-text -in report.pdf -out report.txt
+# 🚧 Optimization
+solopdf optimize large.pdf -o compressed.pdf --quality 85
+solopdf repair broken.pdf -o fixed.pdf
 ```
 
 ---
 
 ## 🤝 Contributing
 
-We believe in the power of community and welcome **contributions of all kinds\!** This project thrives on public collaboration. Whether you're fixing a bug, proposing a new feature, improving our documentation, or simply spreading the word, your help is valued and appreciated.
+We believe in the power of community and welcome **contributions of all kinds!** This project thrives on public collaboration. Whether you're fixing a bug, proposing a new feature, improving our documentation, or simply spreading the word, your help is valued and appreciated.
+
+### Ways to Contribute
+
+- 🐛 **Report Issues**: Found a bug? [Open an issue](https://github.com/soloflow-ai/solopdf-cli/issues)
+- 💡 **Feature Requests**: Have an idea? We'd love to hear it!
+- 🔧 **Code Contributions**: Submit pull requests for fixes or new features
+- 📚 **Documentation**: Help improve our docs and examples
+- 🧪 **Testing**: Help us test on different platforms and use cases
+- 💬 **Community**: Join discussions and help other users
+
+### Development Setup
+
+```bash
+# Fork and clone the repo
+git clone https://github.com/your-username/solopdf-cli.git
+cd solopdf-cli
+
+# Install dependencies
+pnpm install
+
+# Run tests
+pnpm test
+
+# Build and test locally
+pnpm build:all
+```
 
 Please read our **Contributing Guide** to see how you can get involved with the project and help us make it better.
 
 ---
 
-## 📜 License
+## � Project Stats
+
+![GitHub stars](https://img.shields.io/github/stars/soloflow-ai/solopdf-cli?style=social)
+![GitHub forks](https://img.shields.io/github/forks/soloflow-ai/solopdf-cli?style=social)
+![GitHub issues](https://img.shields.io/github/issues/soloflow-ai/solopdf-cli)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/soloflow-ai/solopdf-cli)
+
+---
+
+## �📜 License
 
 This project is licensed under the **ISC License**. This means you are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software. See the `LICENSE` file for the full details.
 
-Made with ❤️ by Soloflow.AI
+---
+
+## 🙏 Acknowledgements
+
+- **Rust Community**: For the incredible `lopdf` and cryptographic libraries
+- **NAPI-RS**: For seamless Rust-Node.js integration
+- **Contributors**: Everyone who has helped make this project better
+- **Users**: For testing, feedback, and feature requests
+
+---
+
+**Made with ❤️ by [Soloflow.AI](https://github.com/soloflow-ai)**
+
+_Building the future of PDF processing, one commit at a time._

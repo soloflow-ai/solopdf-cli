@@ -1,6 +1,7 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // === Build Tasks ===
     {
       "label": "Build Rust Core",
       "type": "shell",
@@ -8,6 +9,90 @@
       "args": [
         "-c",
         "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Rust Core (Debug)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Build All Platforms",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npm install && npx napi build --release --target x86_64-unknown-linux-gnu && npx napi build --release --target x86_64-pc-windows-msvc && npx napi build --release --target x86_64-apple-darwin && npx napi build --release --target aarch64-apple-darwin"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Linux Binary",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --target x86_64-unknown-linux-gnu"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Build Windows Binary",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --target x86_64-pc-windows-msvc"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Build macOS Intel Binary",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && npx napi build --release --target x86_64-apple-darwin"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Build macOS ARM Binary",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && export MACOSX_DEPLOYMENT_TARGET=11.0 && npx napi build --release --target aarch64-apple-darwin"
       ],
       "group": "build",
       "isBackground": false,
@@ -25,16 +110,129 @@
       "label": "Build All",
       "dependsOrder": "sequence",
       "dependsOn": ["Build Rust Core", "Build Node Wrapper"],
-      "group": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "isBackground": false
     },
+
+    // === Test Tasks ===
+    {
+      "label": "Test Rust Core",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && cargo test --verbose"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Test Node Unit",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test:unit",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Node Integration",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test:integration",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Node CLI",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test:cli",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Node All",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm test",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Test All",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Test Rust Core", "Test Node All"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "isBackground": false
+    },
+
+    // === Lint Tasks ===
+    {
+      "label": "Lint Rust",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && cargo clippy --all-targets --all-features -- -D warnings"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Format Rust",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && cargo fmt"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Format Check Rust",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && cargo fmt --check"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint Node",
+      "type": "shell",
+      "command": "cd node-wrapper && pnpm lint",
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+
+    // === Validation Tasks ===
     {
       "label": "Quick Check",
       "type": "shell",
       "command": "./scripts/quick-check.sh",
       "group": "test",
       "isBackground": false,
-      "problemMatcher": []
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
     },
     {
       "label": "Validate for Publish",
@@ -44,6 +242,95 @@
       "isBackground": false,
       "problemMatcher": []
     },
+
+    // === Platform Package Tasks ===
+    {
+      "label": "Create Platform Packages",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "mkdir -p platform-packages && rm -rf platform-packages/* && for target in win32-x64-msvc linux-x64-gnu darwin-x64 darwin-arm64; do mkdir -p platform-packages/solopdf-cli-$target && cd platform-packages/solopdf-cli-$target && echo '{\"name\": \"solopdf-cli-'$target'\", \"version\": \"0.0.3\", \"description\": \"SoloPDF CLI native binary for '$target'\", \"main\": \"index.node\", \"files\": [\"index.node\"], \"license\": \"ISC\"}' > package.json && cd ../..; done"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Platform Loading",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd node-wrapper && node -e \"try { const mod = require('./dist/index.js'); console.log('✅ Platform loading successful'); console.log('Available functions:', Object.keys(mod)); } catch(e) { console.error('❌ Platform loading failed:', e.message); process.exit(1); }\""
+      ],
+      "group": "test",
+      "isBackground": false,
+      "dependsOn": ["Build All"],
+      "problemMatcher": []
+    },
+
+    // === Development Tasks ===
+    {
+      "label": "Watch Rust Build",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && cargo watch -x 'build'"
+      ],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Watch Rust Test",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && cargo watch -x 'test'"
+      ],
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": ["$rustc"]
+    },
+
+    // === Utility Tasks ===
+    {
+      "label": "Setup Test Environment",
+      "type": "shell",
+      "command": "node scripts/setup-execution-env.mjs",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate Test PDFs",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && source ~/.cargo/env 2>/dev/null || true && mkdir -p ../executed/generated-pdfs && cargo run --bin generate_test_pdfs -- ../executed/generated-pdfs"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "Clean All",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd rust-core && cargo clean && rm -rf node_modules target && cd ../node-wrapper && rm -rf node_modules dist coverage && pnpm install"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+
+    // === Publishing Tasks ===
     {
       "label": "Publish to NPM",
       "type": "shell",
@@ -53,12 +340,42 @@
       "problemMatcher": []
     },
     {
-      "label": "Setup Test Environment",
+      "label": "Dry Run Publish",
       "type": "shell",
-      "command": "node scripts/setup-execution-env.mjs",
-      "group": "build",
+      "command": "cd node-wrapper && pnpm publish --dry-run",
+      "group": "test",
       "isBackground": false,
+      "dependsOn": ["Build All"],
       "problemMatcher": []
+    },
+
+    // === Complete Workflow Tasks ===
+    {
+      "label": "Full CI Pipeline",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Format Check Rust",
+        "Lint Rust",
+        "Test Rust Core",
+        "Build Rust Core",
+        "Lint Node",
+        "Test Node All",
+        "Build Node Wrapper",
+        "Test Platform Loading"
+      ],
+      "group": "test",
+      "isBackground": false
+    },
+    {
+      "label": "Pre-Publish Check",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Full CI Pipeline",
+        "Validate for Publish",
+        "Dry Run Publish"
+      ],
+      "group": "test",
+      "isBackground": false
     }
   ]
 }

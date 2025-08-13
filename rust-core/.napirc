@@ -12,5 +12,12 @@
   "output": {
     "dir": ".",
     "name": "index"
+  },
+  "features": {
+    "abi": "node",
+    "buildTarget": "release"
+  },
+  "nodeVersion": {
+    "min": "18.0.0"
   }
 }
