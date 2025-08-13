@@ -46,6 +46,15 @@ jobs:
         with:
           node-version: "22.x"
 
+      - name: Set macOS deployment target
+        if: matrix.os == 'macos-latest'
+        run: |
+          if [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
+            echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+          else
+            echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
+          fi
+
       - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:

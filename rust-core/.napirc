@@ -19,5 +19,13 @@
   },
   "nodeVersion": {
     "min": "18.0.0"
+  },
+  "targetEnv": {
+    "x86_64-apple-darwin": {
+      "MACOSX_DEPLOYMENT_TARGET": "10.12"
+    },
+    "aarch64-apple-darwin": {
+      "MACOSX_DEPLOYMENT_TARGET": "11.0"
+    }
   }
 }
