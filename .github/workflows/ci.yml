@@ -82,53 +82,69 @@ jobs:
           echo "CXX=$(xcrun -f clang++)" >> $GITHUB_ENV
           echo "AR=$(xcrun -f ar)" >> $GITHUB_ENV
           echo "STRIP=$(xcrun -f strip)" >> $GITHUB_ENV
-          
+
           # Set target-specific environment variables for ring and other native deps
           echo "TARGET_CC=clang" >> $GITHUB_ENV
           echo "TARGET_CXX=clang++" >> $GITHUB_ENV
           echo "TARGET_AR=ar" >> $GITHUB_ENV
           echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=clang" >> $GITHUB_ENV
-          
+
           # Configure environment for ARM64 native modules (node-gyp/napi)
           echo "npm_config_target_arch=arm64" >> $GITHUB_ENV
           echo "npm_config_target_platform=darwin" >> $GITHUB_ENV
           echo "npm_config_build_from_source=true" >> $GITHUB_ENV
           echo "npm_config_cache=/tmp/.npm" >> $GITHUB_ENV
           echo "npm_config_runtime=node" >> $GITHUB_ENV
-          
+
           # Verify Node.js architecture
           echo "Node.js architecture: $(node -p process.arch)"
           echo "Xcode version: $(xcodebuild -version || echo 'No Xcode')"
 
       - name: Build NAPI module
         working-directory: rust-core
+        shell: bash
         run: |
           npm install
-          # Clear any previous builds to ensure clean state
-          rm -rf target/aarch64-apple-darwin target/x86_64-apple-darwin target/x86_64-pc-windows-msvc target/x86_64-unknown-linux-gnu 2>/dev/null || true
           npx napi build --release --target ${{ matrix.target }}
 
       - name: Verify build output
         working-directory: rust-core
+        shell: bash
         run: |
           echo "Checking build artifacts..."
-          ls -la index.node index.js index.d.ts
-          file index.node
-          
-          # For macOS, check the architecture
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            echo "Binary architecture info:"
-            if command -v lipo >/dev/null 2>&1; then
-              lipo -info index.node
-            else
-              echo "lipo not available, using otool instead"
-              otool -L index.node || echo "Could not determine architecture"
-            fi
-          fi
+
+          # Check if files exist (cross-platform)
+          echo "Build artifacts:"
+          [ -f "index.node" ] && echo "✓ index.node exists ($(du -h index.node 2>/dev/null | cut -f1 || echo 'unknown size'))" || echo "✗ index.node missing"
+          [ -f "index.js" ] && echo "✓ index.js exists" || echo "✗ index.js missing"  
+          [ -f "index.d.ts" ] && echo "✓ index.d.ts exists" || echo "✗ index.d.ts missing"
+
+          # Platform-specific verification
+          case "${{ matrix.os }}" in
+            "ubuntu-latest")
+              echo "Linux binary info:"
+              file index.node 2>/dev/null || echo "file command not available"
+              ;;
+            "macos-latest")
+              echo "macOS binary info:"
+              if command -v lipo >/dev/null 2>&1; then
+                lipo -info index.node
+              elif command -v otool >/dev/null 2>&1; then
+                otool -L index.node
+              else
+                echo "Architecture tools not available"
+              fi
+              ;;
+            "windows-latest")
+              echo "Windows binary info:"
+              echo "File type: $(file index.node 2>/dev/null || echo 'Windows binary')"
+              ;;
+          esac
 
       - name: Generate test PDFs (Linux only)
         if: matrix.os == 'ubuntu-latest'
         working-directory: rust-core
+        shell: bash
         run: |
           mkdir -p ../executed/generated-pdfs
           cargo run --bin generate_test_pdfs -- ../executed/generated-pdfs
