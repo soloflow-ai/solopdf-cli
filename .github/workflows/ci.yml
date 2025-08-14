@@ -145,14 +145,28 @@ jobs:
           name: binary-linux-x64-gnu
           path: rust-core/
 
+      - name: Verify downloaded files
+        run: |
+          echo "=== Root directory structure ==="
+          ls -la
+          echo "=== rust-core directory ==="
+          ls -la rust-core/ || echo "rust-core directory not found"
+          echo "=== Looking for all .node files ==="
+          find . -name "*.node" -type f
+          echo "=== Checking expected paths ==="
+          [ -f "rust-core/index.node" ] && echo "✓ rust-core/index.node exists" || echo "✗ rust-core/index.node missing"
+          [ -f "rust-core/index.js" ] && echo "✓ rust-core/index.js exists" || echo "✗ rust-core/index.js missing"
+          [ -f "rust-core/index.d.ts" ] && echo "✓ rust-core/index.d.ts exists" || echo "✗ rust-core/index.d.ts missing"
+
       - name: Setup and test
         run: |
           node scripts/setup-execution-env.mjs
           cd node-wrapper
           pnpm install --no-frozen-lockfile
           pnpm lint
+          # Build first using CI-specific script, then test
+          pnpm run build:ci
           pnpm test
-          pnpm build
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3

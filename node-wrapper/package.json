@@ -14,7 +14,9 @@
   ],
   "scripts": {
     "build": "npm run copy-rust-core && tsc && npm run finalize-build",
+    "build:ci": "npm run copy-rust-core:ci && tsc && npm run finalize-build",
     "copy-rust-core": "mkdir -p src/rust-core dist/rust-core && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node src/rust-core/ && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node dist/rust-core/",
+    "copy-rust-core:ci": "mkdir -p src/rust-core dist/rust-core && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node src/rust-core/ && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node dist/rust-core/",
     "finalize-build": "chmod +x dist/index.js && rm -rf src/rust-core",
     "test": "jest --coverage",
     "test:unit": "jest --testPathPatterns=unit",
