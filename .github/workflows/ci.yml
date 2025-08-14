@@ -1,7 +1,7 @@
 name: SoloPDF CI
 
-# Note: ARM64 macOS support temporarily disabled due to NAPI linking issues
-# Working platforms: Windows x64, Linux x64, macOS Intel x64
+# Note: macOS support temporarily disabled due to NAPI linking issues
+# Working platforms: Windows x64, Linux x64
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             name: linux-x64-gnu
-          - target: x86_64-apple-darwin
-            os: macos-13
-            name: darwin-x64
-          # TODO: ARM64 macOS support - NAPI linking issues need to be resolved
+          # TODO: macOS support - NAPI linking issues need to be resolved  
+          # - target: x86_64-apple-darwin
+          #   os: macos-13
+          #   name: darwin-x64
           # - target: aarch64-apple-darwin
           #   os: macos-14
           #   name: darwin-arm64
@@ -58,27 +58,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
-
-      - name: Debug environment (macOS only)
-        if: startsWith(matrix.os, 'macos')
-        run: |
-          echo "=== Environment Debug ==="
-          echo "macOS version: $(sw_vers -productVersion)"
-          echo "Architecture: $(uname -m)"
-          echo "Node.js version: $(node --version)"
-          echo "Node.js architecture: $(node -p 'process.arch')"
-          echo "Target: ${{ matrix.target }}"
-          echo "Runner OS: ${{ matrix.os }}"
-          if command -v rustc >/dev/null 2>&1; then
-            echo "Rust version: $(rustc --version)"
-            echo "Rust targets: $(rustup target list --installed)"
-          fi
-
-      - name: Set macOS deployment target
-        if: startsWith(matrix.os, 'macos')
-        run: |
-          echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
+          # Use Node.js 20 for better NAPI compatibility
+          node-version: "20.x"
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
@@ -110,7 +91,7 @@ jobs:
           echo "Runner architecture: $(uname -m)"
           echo "Node architecture: $(node -p 'process.arch')"
 
-          # Build with explicit target for all platforms
+          # Build with explicit target for Windows and Linux
           npx napi build --release --platform --target ${{ matrix.target }}
 
       - name: Verify build output
@@ -118,46 +99,7 @@ jobs:
         shell: bash
         run: |
           echo "Checking build artifacts..."
-          echo "Files in directory:"
           ls -la *.node *.js *.d.ts 2>/dev/null || echo "No build artifacts found"
-
-          # Check if files exist (cross-platform)
-          echo "Build artifacts:"
-          if [ -f "index.node" ]; then
-            echo "✓ index.node exists ($(du -h index.node 2>/dev/null | cut -f1 || echo 'unknown size'))"
-          else
-            # Check for platform-specific files
-            NODE_FILE=$(ls *.node 2>/dev/null | head -1)
-            if [ -n "$NODE_FILE" ]; then
-              echo "✓ $NODE_FILE exists ($(du -h $NODE_FILE 2>/dev/null | cut -f1 || echo 'unknown size'))"
-            else
-              echo "✗ No .node file found"
-            fi
-          fi
-          [ -f "index.js" ] && echo "✓ index.js exists" || echo "✗ index.js missing"  
-          [ -f "index.d.ts" ] && echo "✓ index.d.ts exists" || echo "✗ index.d.ts missing"
-
-          # Platform-specific verification
-          case "${{ matrix.os }}" in
-            "ubuntu-latest")
-              echo "Linux binary info:"
-              file *.node 2>/dev/null || echo "file command not available"
-              ;;
-            "macos-13")
-              echo "macOS binary info:"
-              if command -v lipo >/dev/null 2>&1; then
-                lipo -info *.node 2>/dev/null || echo "lipo info not available"
-              elif command -v otool >/dev/null 2>&1; then
-                otool -L *.node 2>/dev/null || echo "otool info not available"
-              else
-                echo "Architecture tools not available"
-              fi
-              ;;
-            "windows-latest")
-              echo "Windows binary info:"
-              echo "File type: $(file *.node 2>/dev/null || echo 'Windows binary')"
-              ;;
-          esac
 
       - name: Generate test PDFs (Linux only)
         if: matrix.os == 'ubuntu-latest'
