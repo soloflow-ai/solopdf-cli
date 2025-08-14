@@ -1,5 +1,8 @@
 name: SoloPDF CI
 
+# Note: ARM64 macOS support temporarily disabled due to NAPI linking issues
+# Working platforms: Windows x64, Linux x64, macOS Intel x64
+
 on:
   push:
     branches: ["main", "develop"]
@@ -23,9 +26,10 @@ jobs:
           - target: x86_64-apple-darwin
             os: macos-13
             name: darwin-x64
-          - target: aarch64-apple-darwin
-            os: macos-14
-            name: darwin-arm64
+          # TODO: ARM64 macOS support - NAPI linking issues need to be resolved
+          # - target: aarch64-apple-darwin
+          #   os: macos-14
+          #   name: darwin-arm64
 
     runs-on: ${{ matrix.os }}
     name: Build ${{ matrix.name }}
@@ -55,22 +59,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
-          # For ARM64 macOS, ensure we get the right architecture
-          architecture: ${{ matrix.os == 'macos-14' && 'arm64' || 'x64' }}
-
-      - name: Setup environment for ARM64 macOS
-        if: matrix.os == 'macos-14' && matrix.target == 'aarch64-apple-darwin'
-        run: |
-          echo "=== Setting up ARM64 macOS environment ==="
-          # Set specific environment variables for ARM64 NAPI builds
-          echo "CC=clang" >> $GITHUB_ENV
-          echo "CXX=clang++" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
-
-          # Ensure we're building for the correct architecture
-          echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=clang" >> $GITHUB_ENV
-          echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS=-C link-arg=-undefined -C link-arg=dynamic_lookup" >> $GITHUB_ENV
 
       - name: Debug environment (macOS only)
         if: startsWith(matrix.os, 'macos')
@@ -90,11 +78,7 @@ jobs:
       - name: Set macOS deployment target
         if: startsWith(matrix.os, 'macos')
         run: |
-          if [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
-            echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
-          else
-            echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
-          fi
+          echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
@@ -126,36 +110,8 @@ jobs:
           echo "Runner architecture: $(uname -m)"
           echo "Node architecture: $(node -p 'process.arch')"
 
-          # Special handling for ARM64 macOS to avoid NAPI linking issues
-          if [ "${{ matrix.os }}" = "macos-14" ] && [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
-            echo "=== Building ARM64 macOS with special configuration ==="
-            
-            # Clear any problematic cache
-            rm -rf target/aarch64-apple-darwin
-            
-            # Try building with crypto features first
-            echo "Step 1: Attempting build with full features"
-            if npx napi build --release --platform; then
-              echo "✅ Full feature build successful"
-            else
-              echo "❌ Full feature build failed, trying without crypto features"
-              echo "Step 2: Building without crypto features to avoid ring compilation issues"
-              if npx napi build --release --platform --no-default-features; then
-                echo "✅ No-crypto build successful"
-              else
-                echo "❌ Both builds failed, trying with explicit target"
-                echo "Step 3: Last resort - explicit target build"
-                npx napi build --release --platform --target aarch64-apple-darwin --no-default-features
-              fi
-            fi
-            
-          elif [ "${{ matrix.os }}" = "macos-13" ] && [ "${{ matrix.target }}" = "x86_64-apple-darwin" ]; then
-            echo "Building x64 natively on x64 runner"
-            npx napi build --release --platform
-          else
-            echo "Building with explicit target: ${{ matrix.target }}"
-            npx napi build --release --platform --target ${{ matrix.target }}
-          fi
+          # Build with explicit target for all platforms
+          npx napi build --release --platform --target ${{ matrix.target }}
 
       - name: Verify build output
         working-directory: rust-core
@@ -187,7 +143,7 @@ jobs:
               echo "Linux binary info:"
               file *.node 2>/dev/null || echo "file command not available"
               ;;
-            "macos-13"|"macos-14")
+            "macos-13")
               echo "macOS binary info:"
               if command -v lipo >/dev/null 2>&1; then
                 lipo -info *.node 2>/dev/null || echo "lipo info not available"
