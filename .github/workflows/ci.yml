@@ -41,10 +41,35 @@ jobs:
           components: rustfmt, clippy
           target: ${{ matrix.target }}
 
+      - name: Verify Rust setup
+        run: |
+          echo "=== Rust Setup Verification ==="
+          rustc --version
+          cargo --version
+          rustup show
+          echo "Installed targets:"
+          rustup target list --installed
+          echo "Default host: $(rustc -vV | grep host | cut -d' ' -f2)"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
+
+      - name: Debug environment (macOS only)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          echo "=== Environment Debug ==="
+          echo "macOS version: $(sw_vers -productVersion)"
+          echo "Architecture: $(uname -m)"
+          echo "Node.js version: $(node --version)"
+          echo "Node.js architecture: $(node -p 'process.arch')"
+          echo "Target: ${{ matrix.target }}"
+          echo "Runner OS: ${{ matrix.os }}"
+          if command -v rustc >/dev/null 2>&1; then
+            echo "Rust version: $(rustc --version)"
+            echo "Rust targets: $(rustup target list --installed)"
+          fi
 
       - name: Set macOS deployment target
         if: startsWith(matrix.os, 'macos')
@@ -79,19 +104,45 @@ jobs:
           # Install dependencies first
           npm install
           
-          # Build for the target - each runner builds for its native target
+          # Build for the target
           echo "Building for target: ${{ matrix.target }}"
-          npx napi build --release --platform --target ${{ matrix.target }}
+          echo "Runner OS: ${{ matrix.os }}"
+          echo "Runner architecture: $(uname -m)"
+          
+          # For native builds, don't specify target to avoid cross-compilation issues
+          # Each runner builds for its native architecture
+          if [ "${{ matrix.os }}" = "macos-14" ] && [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
+            echo "Building ARM64 natively on ARM64 runner"
+            npx napi build --release --platform
+          elif [ "${{ matrix.os }}" = "macos-13" ] && [ "${{ matrix.target }}" = "x86_64-apple-darwin" ]; then
+            echo "Building x64 natively on x64 runner"
+            npx napi build --release --platform
+          else
+            echo "Building with explicit target: ${{ matrix.target }}"
+            npx napi build --release --platform --target ${{ matrix.target }}
+          fi
 
       - name: Verify build output
         working-directory: rust-core
         shell: bash
         run: |
           echo "Checking build artifacts..."
+          echo "Files in directory:"
+          ls -la *.node *.js *.d.ts 2>/dev/null || echo "No build artifacts found"
 
           # Check if files exist (cross-platform)
           echo "Build artifacts:"
-          [ -f "index.node" ] && echo "✓ index.node exists ($(du -h index.node 2>/dev/null | cut -f1 || echo 'unknown size'))" || echo "✗ index.node missing"
+          if [ -f "index.node" ]; then
+            echo "✓ index.node exists ($(du -h index.node 2>/dev/null | cut -f1 || echo 'unknown size'))"
+          else
+            # Check for platform-specific files
+            NODE_FILE=$(ls *.node 2>/dev/null | head -1)
+            if [ -n "$NODE_FILE" ]; then
+              echo "✓ $NODE_FILE exists ($(du -h $NODE_FILE 2>/dev/null | cut -f1 || echo 'unknown size'))"
+            else
+              echo "✗ No .node file found"
+            fi
+          fi
           [ -f "index.js" ] && echo "✓ index.js exists" || echo "✗ index.js missing"  
           [ -f "index.d.ts" ] && echo "✓ index.d.ts exists" || echo "✗ index.d.ts missing"
 
@@ -99,21 +150,21 @@ jobs:
           case "${{ matrix.os }}" in
             "ubuntu-latest")
               echo "Linux binary info:"
-              file index.node 2>/dev/null || echo "file command not available"
+              file *.node 2>/dev/null || echo "file command not available"
               ;;
-            "macos-latest")
+            "macos-13"|"macos-14")
               echo "macOS binary info:"
               if command -v lipo >/dev/null 2>&1; then
-                lipo -info index.node
+                lipo -info *.node 2>/dev/null || echo "lipo info not available"
               elif command -v otool >/dev/null 2>&1; then
-                otool -L index.node
+                otool -L *.node 2>/dev/null || echo "otool info not available"
               else
                 echo "Architecture tools not available"
               fi
               ;;
             "windows-latest")
               echo "Windows binary info:"
-              echo "File type: $(file index.node 2>/dev/null || echo 'Windows binary')"
+              echo "File type: $(file *.node 2>/dev/null || echo 'Windows binary')"
               ;;
           esac
 
@@ -130,7 +181,7 @@ jobs:
         with:
           name: binary-${{ matrix.name }}
           path: |
-            rust-core/index.node
+            rust-core/*.node
             rust-core/index.js
             rust-core/index.d.ts
 
