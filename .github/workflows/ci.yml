@@ -67,7 +67,7 @@ jobs:
           echo "CXX=clang++" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
           echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
-          
+
           # Ensure we're building for the correct architecture
           echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=clang" >> $GITHUB_ENV
           echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS=-C link-arg=-undefined -C link-arg=dynamic_lookup" >> $GITHUB_ENV
