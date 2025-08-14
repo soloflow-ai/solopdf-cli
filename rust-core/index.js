@@ -393,14 +393,9 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
-module.exports.generateSigningKeyPair = nativeBinding.generateSigningKeyPair
-module.exports.getKeyInfoFromJson = nativeBinding.getKeyInfoFromJson
 module.exports.getPageCount = nativeBinding.getPageCount
-module.exports.getPdfChecksum = nativeBinding.getPdfChecksum
 module.exports.getPdfInfoBeforeSigning = nativeBinding.getPdfInfoBeforeSigning
 module.exports.signPdf = nativeBinding.signPdf
 module.exports.signPdfLegacy = nativeBinding.signPdfLegacy
-module.exports.signPdfWithKey = nativeBinding.signPdfWithKey
 module.exports.signPdfWithOptions = nativeBinding.signPdfWithOptions
 module.exports.signPdfWithVisibleText = nativeBinding.signPdfWithVisibleText
-module.exports.verifyPdfSignature = nativeBinding.verifyPdfSignature
