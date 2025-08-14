@@ -23,7 +23,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             name: linux-x64-gnu
-          # TODO: macOS support - NAPI linking issues need to be resolved  
+          # TODO: macOS support - NAPI linking issues need to be resolved
           # - target: x86_64-apple-darwin
           #   os: macos-13
           #   name: darwin-x64
@@ -149,7 +149,7 @@ jobs:
         run: |
           node scripts/setup-execution-env.mjs
           cd node-wrapper
-          pnpm install --frozen-lockfile
+          pnpm install --no-frozen-lockfile
           pnpm lint
           pnpm test
           pnpm build
