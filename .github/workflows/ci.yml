@@ -21,10 +21,10 @@ jobs:
             os: ubuntu-latest
             name: linux-x64-gnu
           - target: x86_64-apple-darwin
-            os: macos-latest
+            os: macos-13
             name: darwin-x64
           - target: aarch64-apple-darwin
-            os: macos-latest
+            os: macos-14
             name: darwin-arm64
 
     runs-on: ${{ matrix.os }}
@@ -45,12 +45,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
-          # Always use x64 Node.js for building (even for ARM64 targets)
-          # The napi build will cross-compile to the correct target
-          architecture: x64
 
       - name: Set macOS deployment target
-        if: matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos')
         run: |
           if [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
             echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
@@ -75,41 +72,6 @@ jobs:
           cargo clippy --all-targets --all-features -- -D warnings
           cargo test --verbose
 
-      - name: Configure build environment (macOS ARM64)
-        if: matrix.target == 'aarch64-apple-darwin'
-        run: |
-          # Ensure we're using the correct toolchain
-          echo "CC=$(xcrun -f clang)" >> $GITHUB_ENV
-          echo "CXX=$(xcrun -f clang++)" >> $GITHUB_ENV
-          echo "AR=$(xcrun -f ar)" >> $GITHUB_ENV
-          echo "STRIP=$(xcrun -f strip)" >> $GITHUB_ENV
-
-          # Set target-specific environment variables for ring and other native deps
-          echo "TARGET_CC=clang" >> $GITHUB_ENV
-          echo "TARGET_CXX=clang++" >> $GITHUB_ENV
-          echo "TARGET_AR=ar" >> $GITHUB_ENV
-          echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=clang" >> $GITHUB_ENV
-
-          # Configure Node.js for ARM64 cross-compilation
-          NODE_VERSION=$(node -p 'process.version')
-          echo "npm_config_target_arch=arm64" >> $GITHUB_ENV
-          echo "npm_config_target_platform=darwin" >> $GITHUB_ENV
-          echo "npm_config_runtime=node" >> $GITHUB_ENV
-          echo "npm_config_target=${NODE_VERSION}" >> $GITHUB_ENV
-          echo "npm_config_disturl=https://nodejs.org/download/release/" >> $GITHUB_ENV
-          echo "npm_config_cache=/tmp/.npm" >> $GITHUB_ENV
-          echo "npm_config_build_from_source=true" >> $GITHUB_ENV
-
-          # Critical: Set NAPI-specific environment for cross-compilation
-          echo "NAPI_BUILD_ARCH=arm64" >> $GITHUB_ENV
-          echo "NAPI_BUILD_PLATFORM=darwin" >> $GITHUB_ENV
-
-          # Verify Node.js architecture and setup
-          echo "Host Node.js architecture: $(node -p process.arch)"
-          echo "Target architecture: arm64"
-          echo "Node.js version: ${NODE_VERSION}"
-          echo "Xcode version: $(xcodebuild -version || echo 'No Xcode')"
-
       - name: Build NAPI module
         working-directory: rust-core
         shell: bash
@@ -117,17 +79,11 @@ jobs:
           # Install dependencies first
           npm install
           
-          # Build for the target
+          # Build for the target - each runner builds for its native target
           echo "Building for target: ${{ matrix.target }}"
-          
-          # For cross-compilation targets, disable crypto features to avoid ring build issues
-          if [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
-            echo "Cross-compiling ARM64 - disabling crypto features to avoid ring compilation issues"
-            npx napi build --release --platform --target ${{ matrix.target }} --no-default-features
-          else
-            echo "Native compilation - including all features"
-            npx napi build --release --platform --target ${{ matrix.target }}
-          fi      - name: Verify build output
+          npx napi build --release --platform --target ${{ matrix.target }}
+
+      - name: Verify build output
         working-directory: rust-core
         shell: bash
         run: |
