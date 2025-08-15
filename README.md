@@ -258,28 +258,79 @@ When you sign a PDF, you get:
 - **Signature File**: JSON file containing cryptographic signature data (if saved with `-s` option)
 - **Checksum**: Short hash for quick integrity verification
 
+
 ## Available Commands
 
 The CLI provides the following commands (use `solopdf --help` for more details):
 
-| Command            | Status | Description                        | Syntax                                                                   |
-| ------------------ | ------ | ---------------------------------- | ------------------------------------------------------------------------ |
-| `pages`            | ✅     | Get the number of pages in a PDF   | `solopdf pages <file.pdf>`                                               |
-| `info`             | ✅     | Get detailed PDF information       | `solopdf info <file.pdf>`                                                |
-| `watermark`        | ✅     | Add a text watermark to a PDF      | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]`          |
-| `sign`             | ⚠️     | (Legacy) Add a text watermark      | `solopdf sign <input.pdf> "<text>" <output.pdf> [options]`               |
-| `generate-key`     | ✅     | Generate cryptographic key pair    | `solopdf generate-key [-o keypair.json]`                                 |
-| `sign-digital`     | ✅     | Create a digital signature         | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]` |
-| `verify-signature` | ✅     | Verify a digital signature         | `solopdf verify-signature <file.pdf> <sig.json> <keypair.json>`          |
-| `checksum`         | ✅     | Get file checksum for verification | `solopdf checksum <file.pdf>`                                            |
-| `--help`           | ✅     | Show help information              | `solopdf --help` or `solopdf <command> --help`                           |
-| `--version`        | ✅     | Show version number                | `solopdf --version`                                                      |
+| Command              | Status | Description                                 | Syntax                                                                                 |
+|----------------------|--------|---------------------------------------------|----------------------------------------------------------------------------------------|
+| `pages`              | ✅     | Get the number of pages in a PDF            | `solopdf pages <file.pdf>`                                                             |
+| `info`               | ✅     | Get detailed PDF information                | `solopdf info <file.pdf>`                                                              |
+| `watermark`          | ✅     | Add a text watermark to a PDF               | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]`                        |
+| `sign`               | ⚠️     | (Legacy) Add a text watermark (deprecated)  | `solopdf sign <input.pdf> "<text>" <output.pdf> [options]`                             |
+| `generate-key`       | ✅     | Generate cryptographic key pair             | `solopdf generate-key [-o keypair.json]`                                               |
+| `sign-digital`       | ✅     | Create a digital signature                  | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]`                |
+| `verify-signature`   | ✅     | Verify a digital signature                  | `solopdf verify-signature <file.pdf> <sig.json> <keypair.json>`                        |
+| `checksum`           | ✅     | Get file checksum for verification          | `solopdf checksum <file.pdf>`                                                          |
+| `--help`             | ✅     | Show help information                       | `solopdf --help` or `solopdf <command> --help`                                         |
+| `--version`          | ✅     | Show version number                         | `solopdf --version`                                                                    |
 
-**Legend:**
+### Watermark/Sign Command Options
 
-- ✅ Fully implemented and tested
-- ⚠️ Deprecated (use alternatives)
-- 🚧 Planned feature (not yet implemented)
+Both `watermark` and legacy `sign` support these options:
+
+- `-s, --font-size <size>`: Font size for the watermark (default: 12)
+- `-c, --color <color>`: Color of the watermark text (default: black)
+- `-x, --x-position <x>`: X coordinate for watermark placement
+- `-y, --y-position <y>`: Y coordinate for watermark placement
+- `-p, --pages <pages>`: Pages to watermark: comma-separated list (e.g., "1,3,5") or "all" (default: all)
+- `-P, --position <position>`: Predefined position (default: bottom-right)
+- `-r, --rotation <degrees>`: Rotation angle in degrees (default: 0)
+- `-o, --opacity <opacity>`: Opacity level 0.0 to 1.0 (default: 1.0)
+
+### Digital Signature Options
+
+- `sign-digital`:
+  - `-t, --text <text>`: Visible signature text (default: "DIGITALLY SIGNED")
+  - `-s, --save-sig <file>`: Save signature info to file
+
+---
+
+## Build and Publish
+
+### Build All (Rust core and Node.js wrapper)
+
+```bash
+pnpm install
+pnpm build:all
+```
+
+### Test (optional, recommended)
+
+```bash
+pnpm test
+```
+
+### Publish to NPM
+
+```bash
+./scripts/publish.sh
+```
+
+### Publish to GitHub
+
+Push your changes and tags to GitHub:
+
+```bash
+git add .
+git commit -m "Release: update CLI and docs"
+git push origin main
+git tag vX.Y.Z   # (replace with the new version)
+git push origin vX.Y.Z
+```
+
+---
 
 ## Requirements
 
