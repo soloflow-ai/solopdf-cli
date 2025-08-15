@@ -143,17 +143,34 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: binary-linux-x64-gnu
-          path: rust-core/
+          path: ./downloaded-artifacts
 
-      - name: Verify downloaded files
+      - name: Verify and setup downloaded files
         run: |
           echo "=== Root directory structure ==="
           ls -la
-          echo "=== rust-core directory ==="
-          ls -la rust-core/ || echo "rust-core directory not found"
+          echo "=== Downloaded artifacts ==="
+          ls -la downloaded-artifacts/ || echo "downloaded-artifacts directory not found"
           echo "=== Looking for all .node files ==="
           find . -name "*.node" -type f
-          echo "=== Checking expected paths ==="
+          
+          # Ensure rust-core directory exists
+          mkdir -p rust-core
+          
+          # Copy files to expected location
+          if [ -f "downloaded-artifacts/index.node" ]; then
+            echo "✓ Found files in downloaded-artifacts/"
+            cp downloaded-artifacts/* rust-core/
+          elif [ -f "downloaded-artifacts/rust-core/index.node" ]; then
+            echo "✓ Found files in downloaded-artifacts/rust-core/"
+            cp downloaded-artifacts/rust-core/* rust-core/
+          else
+            echo "✗ Could not find artifacts in expected locations"
+            find downloaded-artifacts -name "*.node" -type f || echo "No .node files found"
+            exit 1
+          fi
+          
+          echo "=== Final verification ==="
           [ -f "rust-core/index.node" ] && echo "✓ rust-core/index.node exists" || echo "✗ rust-core/index.node missing"
           [ -f "rust-core/index.js" ] && echo "✓ rust-core/index.js exists" || echo "✗ rust-core/index.js missing"
           [ -f "rust-core/index.d.ts" ] && echo "✓ rust-core/index.d.ts exists" || echo "✗ rust-core/index.d.ts missing"
