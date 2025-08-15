@@ -156,7 +156,7 @@ jobs:
 
           # Ensure rust-core directory exists
           mkdir -p rust-core
-          
+
           # Copy files to expected location and handle platform-specific naming
           if [ -f "downloaded-artifacts/index.js" ] && [ -f "downloaded-artifacts/index.d.ts" ]; then
             echo "✓ Found basic files in downloaded-artifacts/"
@@ -190,7 +190,9 @@ jobs:
             echo "✗ Could not find artifacts in expected locations"
             find downloaded-artifacts -name "*.node" -type f || echo "No .node files found"
             exit 1
-          fi          echo "=== Final verification ==="
+          fi
+
+          echo "=== Final verification ==="
           [ -f "rust-core/index.node" ] && echo "✓ rust-core/index.node exists" || echo "✗ rust-core/index.node missing"
           [ -f "rust-core/index.js" ] && echo "✓ rust-core/index.js exists" || echo "✗ rust-core/index.js missing"
           [ -f "rust-core/index.d.ts" ] && echo "✓ rust-core/index.d.ts exists" || echo "✗ rust-core/index.d.ts missing"
