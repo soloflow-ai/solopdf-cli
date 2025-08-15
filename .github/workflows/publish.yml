@@ -109,7 +109,7 @@ jobs:
           cat > package.json << EOF
           {
             "name": "solopdf-cli-${{ matrix.name }}",
-            "version": "0.0.3",
+            "version": "0.0.4",
             "description": "SoloPDF CLI native binary for ${{ matrix.name }}",
             "main": "index.node",
             "files": ["index.node"],
