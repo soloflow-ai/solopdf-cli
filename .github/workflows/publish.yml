@@ -1,9 +1,15 @@
 name: Publish to NPM
 
+# Note: macOS support temporarily disabled due to NAPI linking issues
+# Working platforms: Windows x64, Linux x64
+
 on:
   release:
     types: [published]
   workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   build-binaries:
@@ -16,12 +22,13 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             name: linux-x64-gnu
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            name: darwin-x64
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            name: darwin-arm64
+          # TODO: macOS support - NAPI linking issues need to be resolved
+          # - target: x86_64-apple-darwin
+          #   os: macos-latest
+          #   name: darwin-x64
+          # - target: aarch64-apple-darwin
+          #   os: macos-latest
+          #   name: darwin-arm64
 
     runs-on: ${{ matrix.os }}
     name: Build ${{ matrix.name }}
@@ -34,36 +41,65 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
           components: rustfmt, clippy
+          target: ${{ matrix.target }}
 
-      - name: Install additional Rust targets
+      - name: Verify Rust setup
         run: |
-          rustup target add ${{ matrix.target }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+          echo "=== Rust Setup Verification ==="
+          rustc --version
+          cargo --version
+          rustup show
+          echo "Installed targets:"
+          rustup target list --installed
+          echo "Default host: $(rustc -vV | grep host | cut -d' ' -f2)"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          # Use Node.js 20 for better NAPI compatibility
+          node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Set macOS deployment target
-        if: matrix.os == 'macos-latest'
-        run: |
-          if [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
-            echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
-          else
-            echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
-          fi
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust-core/target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('rust-core/Cargo.lock') }}
 
-      - name: Build binary
+      - name: Validate Rust code (Linux only)
+        if: matrix.os == 'ubuntu-latest'
         working-directory: rust-core
         run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --verbose
+
+      - name: Build NAPI module
+        working-directory: rust-core
+        shell: bash
+        run: |
+          # Install dependencies first
           npm install
-          npx napi build --release --target ${{ matrix.target }}
+
+          # Build for the target
+          echo "Building for target: ${{ matrix.target }}"
+          echo "Runner OS: ${{ matrix.os }}"
+          echo "Runner architecture: $(uname -m)"
+          echo "Node architecture: $(node -p 'process.arch')"
+
+          # Build with explicit target for Windows and Linux
+          npx napi build --release --platform --target ${{ matrix.target }}
+
+      - name: Verify build output
+        working-directory: rust-core
+        shell: bash
+        run: |
+          echo "Checking build artifacts..."
+          ls -la *.node *.js *.d.ts 2>/dev/null || echo "No build artifacts found"
 
       - name: Create platform package
         run: |
@@ -73,7 +109,7 @@ jobs:
           cat > package.json << EOF
           {
             "name": "solopdf-cli-${{ matrix.name }}",
-            "version": "0.0.3",
+            "version": "0.0.4",
             "description": "SoloPDF CLI native binary for ${{ matrix.name }}",
             "main": "index.node",
             "files": ["index.node"],
@@ -82,12 +118,20 @@ jobs:
               "type": "git",
               "url": "https://github.com/soloflow-ai/solopdf-cli.git"
             },
-            "cpu": ["${{ matrix.name == 'darwin-arm64' && 'arm64' || 'x64' }}"],
-            "os": ["${{ matrix.name == 'win32-x64-msvc' && 'win32' || matrix.name == 'linux-x64-gnu' && 'linux' || 'darwin' }}"]
+            "cpu": ["${{ matrix.name == 'win32-x64-msvc' && 'x64' || 'x64' }}"],
+            "os": ["${{ matrix.name == 'win32-x64-msvc' && 'win32' || 'linux' }}"]
           }
           EOF
 
-          cp ../../rust-core/index.node .
+          # Find and copy the platform-specific .node file
+          NODE_FILE=$(find ../../rust-core -name "*.node" -type f | head -1)
+          if [ -n "$NODE_FILE" ]; then
+            echo "✓ Found .node file: $NODE_FILE"
+            cp "$NODE_FILE" index.node
+          else
+            echo "✗ No .node file found"
+            exit 1
+          fi
 
       - name: Publish platform package
         working-directory: platform-packages/solopdf-cli-${{ matrix.name }}
@@ -99,7 +143,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.name }}
-          path: rust-core/index.node
+          path: |
+            rust-core/*.node
+            rust-core/index.js
+            rust-core/index.d.ts
 
   publish-main:
     runs-on: ubuntu-latest
@@ -112,6 +159,8 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: "10.13.1"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -125,15 +174,51 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: binary-linux-x64-gnu
-          path: rust-core/
+          path: ./downloaded-artifacts
+
+      - name: Verify and setup downloaded files
+        run: |
+          echo "=== Downloaded artifacts ==="
+          ls -la downloaded-artifacts/ || echo "downloaded-artifacts directory not found"
+          echo "=== Looking for all .node files ==="
+          find . -name "*.node" -type f
+
+          # Ensure rust-core directory exists
+          mkdir -p rust-core
+
+          # Copy files to expected location and handle platform-specific naming
+          if [ -f "downloaded-artifacts/index.js" ] && [ -f "downloaded-artifacts/index.d.ts" ]; then
+            echo "✓ Found basic files in downloaded-artifacts/"
+            cp downloaded-artifacts/index.js rust-core/
+            cp downloaded-artifacts/index.d.ts rust-core/
+            
+            # Find and rename the platform-specific .node file
+            NODE_FILE=$(find downloaded-artifacts -name "*.node" -type f | head -1)
+            if [ -n "$NODE_FILE" ]; then
+              echo "✓ Found .node file: $NODE_FILE"
+              cp "$NODE_FILE" rust-core/index.node
+            else
+              echo "✗ No .node file found"
+              exit 1
+            fi
+          else
+            echo "✗ Could not find artifacts in expected locations"
+            find downloaded-artifacts -name "*.node" -type f || echo "No .node files found"
+            exit 1
+          fi
+          
+          echo "=== Final verification ==="
+          [ -f "rust-core/index.node" ] && echo "✓ rust-core/index.node exists" || echo "✗ rust-core/index.node missing"
+          [ -f "rust-core/index.js" ] && echo "✓ rust-core/index.js exists" || echo "✗ rust-core/index.js missing"
+          [ -f "rust-core/index.d.ts" ] && echo "✓ rust-core/index.d.ts exists" || echo "✗ rust-core/index.d.ts missing"
 
       - name: Install dependencies and build
         working-directory: node-wrapper
         run: |
-          pnpm install --frozen-lockfile
+          pnpm install --no-frozen-lockfile
           pnpm lint
           pnpm test
-          pnpm build
+          pnpm run build:ci
 
       - name: Publish main package
         working-directory: node-wrapper
