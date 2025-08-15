@@ -206,7 +206,7 @@ jobs:
             find downloaded-artifacts -name "*.node" -type f || echo "No .node files found"
             exit 1
           fi
-          
+
           echo "=== Final verification ==="
           [ -f "rust-core/index.node" ] && echo "✓ rust-core/index.node exists" || echo "✗ rust-core/index.node missing"
           [ -f "rust-core/index.js" ] && echo "✓ rust-core/index.js exists" || echo "✗ rust-core/index.js missing"
