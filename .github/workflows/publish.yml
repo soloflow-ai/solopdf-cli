@@ -109,14 +109,14 @@ jobs:
           cat > package.json << EOF
           {
             "name": "solopdf-cli-${{ matrix.name }}",
-            "version": "0.0.4",
+            "version": "0.0.7",
             "description": "SoloPDF CLI native binary for ${{ matrix.name }}",
             "main": "index.node",
             "files": ["index.node"],
             "license": "ISC",
             "repository": {
               "type": "git",
-              "url": "https://github.com/soloflow-ai/solopdf-cli.git"
+              "url": "git+https://github.com/soloflow-ai/solopdf-cli.git"
             },
             "cpu": ["${{ matrix.name == 'win32-x64-msvc' && 'x64' || 'x64' }}"],
             "os": ["${{ matrix.name == 'win32-x64-msvc' && 'win32' || 'linux' }}"]

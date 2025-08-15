@@ -1,10 +1,10 @@
 {
   "name": "solopdf-cli",
-  "version": "0.0.4",
+  "version": "0.0.7",
   "description": "SoloPDF CLI - A fast PDF manipulation tool with Rust core and Node.js wrapper",
   "repository": {
     "type": "git",
-    "url": "https://github.com/soloflow-ai/solopdf-cli.git"
+    "url": "git+https://github.com/soloflow-ai/solopdf-cli.git"
   },
   "author": "",
   "license": "ISC",
