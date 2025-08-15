@@ -102,34 +102,45 @@ jobs:
           ls -la *.node *.js *.d.ts 2>/dev/null || echo "No build artifacts found"
 
       - name: Create platform package
+        shell: bash
         run: |
           mkdir -p platform-packages/solopdf-cli-${{ matrix.name }}
           cd platform-packages/solopdf-cli-${{ matrix.name }}
 
-          cat > package.json << EOF
-          {
-            "name": "solopdf-cli-${{ matrix.name }}",
-            "version": "0.0.7",
-            "description": "SoloPDF CLI native binary for ${{ matrix.name }}",
-            "main": "index.node",
-            "files": ["index.node"],
-            "license": "ISC",
-            "repository": {
-              "type": "git",
-              "url": "git+https://github.com/soloflow-ai/solopdf-cli.git"
+          # Create package.json using Node.js to avoid shell compatibility issues
+          node -e "
+          const pkg = {
+            name: 'solopdf-cli-${{ matrix.name }}',
+            version: '0.0.7',
+            description: 'SoloPDF CLI native binary for ${{ matrix.name }}',
+            main: 'index.node',
+            files: ['index.node'],
+            license: 'ISC',
+            repository: {
+              type: 'git',
+              url: 'git+https://github.com/soloflow-ai/solopdf-cli.git'
             },
-            "cpu": ["${{ matrix.name == 'win32-x64-msvc' && 'x64' || 'x64' }}"],
-            "os": ["${{ matrix.name == 'win32-x64-msvc' && 'win32' || 'linux' }}"]
-          }
-          EOF
+            cpu: ['${{ matrix.name == 'win32-x64-msvc' && 'x64' || 'x64' }}'],
+            os: ['${{ matrix.name == 'win32-x64-msvc' && 'win32' || 'linux' }}']
+          };
+          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
 
           # Find and copy the platform-specific .node file
-          NODE_FILE=$(find ../../rust-core -name "*.node" -type f | head -1)
-          if [ -n "$NODE_FILE" ]; then
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Windows: look for .node files in rust-core
+            NODE_FILE=$(ls ../../rust-core/*.node 2>/dev/null | head -1)
+          else
+            # Linux: use find
+            NODE_FILE=$(find ../../rust-core -name "*.node" -type f | head -1)
+          fi
+          
+          if [ -n "$NODE_FILE" ] && [ -f "$NODE_FILE" ]; then
             echo "✓ Found .node file: $NODE_FILE"
             cp "$NODE_FILE" index.node
           else
             echo "✗ No .node file found"
+            ls -la ../../rust-core/ || echo "rust-core directory not found"
             exit 1
           fi
 
