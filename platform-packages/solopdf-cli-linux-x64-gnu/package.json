@@ -1,0 +1,14 @@
+{
+  "name": "solopdf-cli-linux-x64-gnu",
+  "version": "0.0.7",
+  "description": "SoloPDF CLI native binary for linux-x64-gnu",
+  "main": "index.node",
+  "files": ["index.node"],
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/soloflow-ai/solopdf-cli.git"
+  },
+  "cpu": ["x64"],
+  "os": ["linux"]
+}
