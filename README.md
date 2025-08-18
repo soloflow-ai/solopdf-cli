@@ -252,22 +252,21 @@ When you sign a PDF, you get:
 - **Signature File**: JSON file containing cryptographic signature data (if saved with `-s` option)
 - **Checksum**: Short hash for quick integrity verification
 
-
 ## Available Commands
 
 The CLI provides the following commands (use `solopdf --help` for more details):
 
-| Command              | Status | Description                                 | Syntax                                                                                 |
-|----------------------|--------|---------------------------------------------|----------------------------------------------------------------------------------------|
-| `pages`              | ✅     | Get the number of pages in a PDF            | `solopdf pages <file.pdf>`                                                             |
-| `info`               | ✅     | Get detailed PDF information                | `solopdf info <file.pdf>`                                                              |
-| `watermark`          | ✅     | Add a text watermark to a PDF               | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]`                        |
-| `generate-key`       | ✅     | Generate cryptographic key pair             | `solopdf generate-key [--output keypair.json]`                                         |
-| `sign-digital`       | ✅     | Create a digital signature                  | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]`              |
-| `verify-signature`   | ✅     | Verify a digital signature                  | `solopdf verify-signature <file.pdf> <sig.json> <keypair.json>`                        |
-| `checksum`           | ✅     | Get file checksum for verification          | `solopdf checksum <file.pdf>`                                                          |
-| `--help`             | ✅     | Show help information                       | `solopdf --help` or `solopdf <command> --help`                                         |
-| `--version`          | ✅     | Show version number                         | `solopdf --version`                                                                    |
+| Command            | Status | Description                        | Syntax                                                                   |
+| ------------------ | ------ | ---------------------------------- | ------------------------------------------------------------------------ |
+| `pages`            | ✅     | Get the number of pages in a PDF   | `solopdf pages <file.pdf>`                                               |
+| `info`             | ✅     | Get detailed PDF information       | `solopdf info <file.pdf>`                                                |
+| `watermark`        | ✅     | Add a text watermark to a PDF      | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]`          |
+| `generate-key`     | ✅     | Generate cryptographic key pair    | `solopdf generate-key [--output keypair.json]`                           |
+| `sign-digital`     | ✅     | Create a digital signature         | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]` |
+| `verify-signature` | ✅     | Verify a digital signature         | `solopdf verify-signature <file.pdf> <sig.json> <keypair.json>`          |
+| `checksum`         | ✅     | Get file checksum for verification | `solopdf checksum <file.pdf>`                                            |
+| `--help`           | ✅     | Show help information              | `solopdf --help` or `solopdf <command> --help`                           |
+| `--version`        | ✅     | Show version number                | `solopdf --version`                                                      |
 
 ### Watermark Command Options
 

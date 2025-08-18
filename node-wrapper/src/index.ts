@@ -30,15 +30,21 @@ function parsePageNumbers(pageOption: string, totalPages: number): number[] {
   if (pageOption === 'all') {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
-  
+
   if (pageOption === 'even') {
-    return Array.from({ length: Math.floor(totalPages / 2) }, (_, i) => (i + 1) * 2).filter(p => p <= totalPages);
+    return Array.from(
+      { length: Math.floor(totalPages / 2) },
+      (_, i) => (i + 1) * 2,
+    ).filter((p) => p <= totalPages);
   }
-  
+
   if (pageOption === 'odd') {
-    return Array.from({ length: Math.ceil(totalPages / 2) }, (_, i) => i * 2 + 1).filter(p => p <= totalPages);
+    return Array.from(
+      { length: Math.ceil(totalPages / 2) },
+      (_, i) => i * 2 + 1,
+    ).filter((p) => p <= totalPages);
   }
-  
+
   // Parse comma-separated list like "1,2,5"
   return pageOption
     .split(',')
@@ -266,6 +272,9 @@ program
         }
         console.log(chalk.gray(`   📄 Target: ${targetPagesText}`));
 
+        console.error('DEBUG: About to call signPdfWithOptions...');
+        process.stdout.write('DEBUG: STDOUT WRITE TEST\n');
+
         // Parse watermark options for the Rust function
         const signingOptions: SigningOptions = {
           fontSize: fontSize,
@@ -283,9 +292,15 @@ program
         };
 
         // Add watermark to the PDF copy using the advanced Rust function with proper options
-        showProgress('✍️  Applying watermark...', () =>
-          signPdfWithOptions(outputPath, watermarkText, signingOptions),
-        );
+        showProgress('✍️  Applying watermark...', () => {
+          const result = signPdfWithOptions(
+            outputPath,
+            watermarkText,
+            signingOptions,
+          );
+          console.log('DEBUG: signPdfWithOptions completed successfully');
+          return result;
+        });
 
         console.log(
           chalk.green('\n✅ Success!'),

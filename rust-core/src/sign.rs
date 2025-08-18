@@ -187,6 +187,9 @@ pub fn sign_pdf_with_options(
     signature_text: String,
     options: Option<SigningOptions>,
 ) -> Result<()> {
+    eprintln!("DEBUG: sign_pdf_with_options called with file: {}", file_path);
+    eprintln!("DEBUG: signature_text: {}", signature_text);
+    eprintln!("DEBUG: options: {:?}", options);
     let opts = options.unwrap_or(SigningOptions {
         font_size: Some(12.0),
         color: Some("black".to_string()),
@@ -216,20 +219,20 @@ pub fn sign_pdf_with_options(
     }
 
     // Determine which pages to sign
-    let target_pages: Vec<_> = if let Some(page_nums) = &opts.pages {
-        pages
-            .iter()
-            .enumerate()
-            .filter_map(|(i, (page_id, _))| {
-                if page_nums.contains(&((i + 1) as u32)) {
-                    Some(*page_id)
-                } else {
-                    None
-                }
-            })
-            .collect()
+    let target_pages: Vec<lopdf::ObjectId> = if let Some(page_nums) = &opts.pages {
+        // Get all pages as ordered list 
+        let page_ids: Vec<lopdf::ObjectId> = pages.values().copied().collect();
+        let mut filtered_pages = Vec::new();
+        
+        for page_num in page_nums {
+            if *page_num > 0 && (*page_num as usize) <= page_ids.len() {
+                filtered_pages.push(page_ids[(*page_num - 1) as usize]);
+            }
+        }
+        
+        filtered_pages
     } else {
-        pages.keys().copied().collect()
+        pages.values().copied().collect()
     };
 
     // Get positioning values
@@ -289,8 +292,7 @@ pub fn sign_pdf_with_options(
         let content_id = document.add_object(content_stream);
 
         // Add to page contents
-        let page_object_id = (page_id, 0);
-        if let Ok(lopdf::Object::Dictionary(page_dict)) = document.get_object_mut(page_object_id) {
+        if let Ok(lopdf::Object::Dictionary(page_dict)) = document.get_object_mut(page_id) {
             match page_dict.get_mut(b"Contents") {
                 Ok(lopdf::Object::Array(contents)) => {
                     contents.push(lopdf::Object::Reference(content_id));

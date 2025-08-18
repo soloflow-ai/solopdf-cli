@@ -82,7 +82,7 @@ Add a watermark to a PDF document with the specified text. The command takes thr
 - `--pages <pages>`: Pages to watermark (default: all)
   - `all` - watermark all pages
   - `even` - watermark only even pages
-  - `odd` - watermark only odd pages  
+  - `odd` - watermark only odd pages
   - `"1,2,5"` - watermark specific pages (comma-separated)
 - `--position <position>`: Predefined position (default: bottom-right)
 - `--rotation <degrees>`: Rotation angle in degrees (default: 0)

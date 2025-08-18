@@ -39,7 +39,9 @@ describe('Watermark Page Options', () => {
   describe('Page Selection Options', () => {
     it('should watermark all pages by default', () => {
       if (samplePdfs.length > 0) {
-        const originalPath = samplePdfs.find(p => p.includes('three-pages.pdf')) || samplePdfs[0];
+        const originalPath =
+          samplePdfs.find((p) => p.includes('three-pages.pdf')) ||
+          samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-all-pages.pdf');
         const outputPath = path.join(testDir, 'temp-all-pages-output.pdf');
         tempFiles.push(tempPath, outputPath);
@@ -59,7 +61,9 @@ describe('Watermark Page Options', () => {
 
     it('should watermark even pages only', () => {
       if (samplePdfs.length > 0) {
-        const originalPath = samplePdfs.find(p => p.includes('three-pages.pdf')) || samplePdfs[0];
+        const originalPath =
+          samplePdfs.find((p) => p.includes('three-pages.pdf')) ||
+          samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-even-pages.pdf');
         const outputPath = path.join(testDir, 'temp-even-pages-output.pdf');
         tempFiles.push(tempPath, outputPath);
@@ -79,7 +83,9 @@ describe('Watermark Page Options', () => {
 
     it('should watermark odd pages only', () => {
       if (samplePdfs.length > 0) {
-        const originalPath = samplePdfs.find(p => p.includes('three-pages.pdf')) || samplePdfs[0];
+        const originalPath =
+          samplePdfs.find((p) => p.includes('three-pages.pdf')) ||
+          samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-odd-pages.pdf');
         const outputPath = path.join(testDir, 'temp-odd-pages-output.pdf');
         tempFiles.push(tempPath, outputPath);
@@ -99,7 +105,9 @@ describe('Watermark Page Options', () => {
 
     it('should watermark specific pages', () => {
       if (samplePdfs.length > 0) {
-        const originalPath = samplePdfs.find(p => p.includes('three-pages.pdf')) || samplePdfs[0];
+        const originalPath =
+          samplePdfs.find((p) => p.includes('three-pages.pdf')) ||
+          samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-specific-pages.pdf');
         const outputPath = path.join(testDir, 'temp-specific-pages-output.pdf');
         tempFiles.push(tempPath, outputPath);
@@ -119,7 +127,9 @@ describe('Watermark Page Options', () => {
 
     it('should handle single page selection', () => {
       if (samplePdfs.length > 0) {
-        const originalPath = samplePdfs.find(p => p.includes('single-page.pdf')) || samplePdfs[0];
+        const originalPath =
+          samplePdfs.find((p) => p.includes('single-page.pdf')) ||
+          samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-single-page.pdf');
         const outputPath = path.join(testDir, 'temp-single-page-output.pdf');
         tempFiles.push(tempPath, outputPath);
@@ -139,7 +149,9 @@ describe('Watermark Page Options', () => {
 
     it('should ignore invalid page numbers', () => {
       if (samplePdfs.length > 0) {
-        const originalPath = samplePdfs.find(p => p.includes('three-pages.pdf')) || samplePdfs[0];
+        const originalPath =
+          samplePdfs.find((p) => p.includes('three-pages.pdf')) ||
+          samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-invalid-pages.pdf');
         const outputPath = path.join(testDir, 'temp-invalid-pages-output.pdf');
         tempFiles.push(tempPath, outputPath);
@@ -159,9 +171,14 @@ describe('Watermark Page Options', () => {
 
     it('should handle whitespace in page list', () => {
       if (samplePdfs.length > 0) {
-        const originalPath = samplePdfs.find(p => p.includes('three-pages.pdf')) || samplePdfs[0];
+        const originalPath =
+          samplePdfs.find((p) => p.includes('three-pages.pdf')) ||
+          samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-whitespace-pages.pdf');
-        const outputPath = path.join(testDir, 'temp-whitespace-pages-output.pdf');
+        const outputPath = path.join(
+          testDir,
+          'temp-whitespace-pages-output.pdf',
+        );
         tempFiles.push(tempPath, outputPath);
 
         fs.copyFileSync(originalPath, tempPath);
