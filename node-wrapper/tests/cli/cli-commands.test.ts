@@ -74,8 +74,8 @@ describe('CLI Commands', () => {
       expect(output).toContain('<file>');
     });
 
-    it('should display sign command help', () => {
-      const output = execSync(`node ${cliPath} sign --help`, {
+    it('should display watermark command help', () => {
+      const output = execSync(`node ${cliPath} watermark --help`, {
         encoding: 'utf8',
       });
       expect(output).toContain('watermark');
@@ -181,33 +181,33 @@ describe('CLI Commands', () => {
     });
   });
 
-  describe('Sign Command', () => {
-    it('should sign PDF files successfully', () => {
+  describe('Watermark Command', () => {
+    it('should watermark PDF files successfully', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
-        const tempPath = path.join(testDir, 'temp-cli-sign.pdf');
-        const outputPath = path.join(testDir, 'temp-cli-sign-output.pdf');
+        const tempPath = path.join(testDir, 'temp-cli-watermark.pdf');
+        const outputPath = path.join(testDir, 'temp-cli-watermark-output.pdf');
         tempFiles.push(tempPath);
         tempFiles.push(outputPath);
 
         fs.copyFileSync(originalPath, tempPath);
 
-        const signature = 'CLI Test Signature';
+        const watermark = 'CLI Test Watermark';
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "${signature}" "${outputPath}"`,
+          `node ${cliPath} watermark "${tempPath}" "${watermark}" "${outputPath}"`,
           { encoding: 'utf8' },
         );
 
         expect(output).toContain('Success');
         expect(output).toContain('watermarked');
-        expect(output).toContain(signature);
+        expect(output).toContain(watermark);
         expect(output).toContain('Document has');
         expect(output).toContain('pages');
         expect(fs.existsSync(outputPath)).toBe(true);
       }
     });
 
-    it('should handle signature with special characters', () => {
+    it('should handle watermark with special characters', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-cli-special.pdf');
@@ -217,9 +217,9 @@ describe('CLI Commands', () => {
 
         fs.copyFileSync(originalPath, tempPath);
 
-        const signature = 'John Döe - Spëcial Signature 🖊️';
+        const watermark = 'John Döe - Spëcial Watermark 🖊️';
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "${signature}" "${outputPath}"`,
+          `node ${cliPath} watermark "${tempPath}" "${watermark}" "${outputPath}"`,
           { encoding: 'utf8' },
         );
 
@@ -229,7 +229,7 @@ describe('CLI Commands', () => {
       }
     });
 
-    it('should handle empty signature', () => {
+    it('should handle empty watermark', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-cli-empty.pdf');
@@ -240,7 +240,7 @@ describe('CLI Commands', () => {
         fs.copyFileSync(originalPath, tempPath);
 
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "" "${outputPath}"`,
+          `node ${cliPath} watermark "${tempPath}" "" "${outputPath}"`,
           {
             encoding: 'utf8',
           },
@@ -252,7 +252,7 @@ describe('CLI Commands', () => {
       }
     });
 
-    it('should handle long signatures', () => {
+    it('should handle long watermarks', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-cli-long.pdf');
@@ -262,9 +262,9 @@ describe('CLI Commands', () => {
 
         fs.copyFileSync(originalPath, tempPath);
 
-        const longSignature = 'Very long signature: ' + 'A'.repeat(100);
+        const longWatermark = 'Very long watermark: ' + 'A'.repeat(100);
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "${longSignature}" "${outputPath}"`,
+          `node ${cliPath} watermark "${tempPath}" "${longWatermark}" "${outputPath}"`,
           { encoding: 'utf8' },
         );
 
@@ -275,11 +275,11 @@ describe('CLI Commands', () => {
     });
 
     it('should handle non-existent file gracefully', () => {
-      const outputPath = path.join(testDir, 'signed-nonexistent.pdf');
+      const outputPath = path.join(testDir, 'watermarked-nonexistent.pdf');
       tempFiles.push(outputPath);
       try {
         execSync(
-          `node ${cliPath} sign "/non/existent/file.pdf" "Signature" "${outputPath}"`,
+          `node ${cliPath} watermark "/non/existent/file.pdf" "Watermark" "${outputPath}"`,
           {
             encoding: 'utf8',
           },
@@ -291,7 +291,7 @@ describe('CLI Commands', () => {
       }
     });
 
-    it('should display page count before signing', () => {
+    it('should display page count before watermarking', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-cli-info.pdf');
@@ -302,7 +302,7 @@ describe('CLI Commands', () => {
         fs.copyFileSync(originalPath, tempPath);
 
         const output = execSync(
-          `node ${cliPath} sign "${tempPath}" "Test" "${outputPath}"`,
+          `node ${cliPath} watermark "${tempPath}" "Test" "${outputPath}"`,
           {
             encoding: 'utf8',
           },
@@ -317,7 +317,7 @@ describe('CLI Commands', () => {
   });
 
   describe('Integration Tests', () => {
-    it('should handle workflow: info -> sign -> pages', () => {
+    it('should handle workflow: info -> watermark -> pages', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-cli-workflow.pdf');
@@ -333,17 +333,17 @@ describe('CLI Commands', () => {
         expect(pageMatch).toBeTruthy();
         const originalPages = parseInt(pageMatch![1]);
 
-        // Sign
+        // Watermark
         const outputPath = path.join(testDir, 'temp-cli-workflow-output.pdf');
         tempFiles.push(outputPath);
-        const signOutput = execSync(
-          `node ${cliPath} sign "${tempPath}" "Workflow Test" "${outputPath}"`,
+        const watermarkOutput = execSync(
+          `node ${cliPath} watermark "${tempPath}" "Workflow Test" "${outputPath}"`,
           { encoding: 'utf8' },
         );
-        expect(signOutput).toContain('Success');
+        expect(watermarkOutput).toContain('Success');
         expect(fs.existsSync(outputPath)).toBe(true);
 
-        // Check pages again (on the signed output file)
+        // Check pages again (on the watermarked output file)
         const pagesOutput = execSync(`node ${cliPath} pages "${outputPath}"`, {
           encoding: 'utf8',
         });
@@ -355,7 +355,7 @@ describe('CLI Commands', () => {
       }
     });
 
-    it('should handle multiple signatures on same file', () => {
+    it('should handle multiple watermarks on same file', () => {
       if (samplePdfs.length > 0) {
         const originalPath = samplePdfs[0];
         const tempPath = path.join(testDir, 'temp-cli-multi.pdf');
@@ -363,21 +363,21 @@ describe('CLI Commands', () => {
 
         fs.copyFileSync(originalPath, tempPath);
 
-        // First signature
+        // First watermark
         const output1Path = path.join(testDir, 'temp-cli-multi-1.pdf');
         tempFiles.push(output1Path);
         const output1 = execSync(
-          `node ${cliPath} sign "${tempPath}" "First Signature" "${output1Path}"`,
+          `node ${cliPath} watermark "${tempPath}" "First Watermark" "${output1Path}"`,
           { encoding: 'utf8' },
         );
         expect(output1).toContain('Success');
         expect(fs.existsSync(output1Path)).toBe(true);
 
-        // Second signature (using first output as input)
+        // Second watermark (using first output as input)
         const output2Path = path.join(testDir, 'temp-cli-multi-2.pdf');
         tempFiles.push(output2Path);
         const output2 = execSync(
-          `node ${cliPath} sign "${output1Path}" "Second Signature" "${output2Path}"`,
+          `node ${cliPath} watermark "${output1Path}" "Second Watermark" "${output2Path}"`,
           { encoding: 'utf8' },
         );
         expect(output2).toContain('Success');

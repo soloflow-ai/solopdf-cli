@@ -24,12 +24,39 @@ function showProgress<T>(message: string, operation: () => T): T {
     throw error;
   }
 }
+
+// Function to parse page numbers from page option
+function parsePageNumbers(pageOption: string, totalPages: number): number[] {
+  if (pageOption === 'all') {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  
+  if (pageOption === 'even') {
+    return Array.from({ length: Math.floor(totalPages / 2) }, (_, i) => (i + 1) * 2).filter(p => p <= totalPages);
+  }
+  
+  if (pageOption === 'odd') {
+    return Array.from({ length: Math.ceil(totalPages / 2) }, (_, i) => i * 2 + 1).filter(p => p <= totalPages);
+  }
+  
+  // Parse comma-separated list like "1,2,5"
+  return pageOption
+    .split(',')
+    .map((p: string) => parseInt(p.trim()))
+    .filter((p: number) => !isNaN(p) && p > 0 && p <= totalPages)
+    .sort((a, b) => a - b);
+}
+
+// Get version from package.json
+const packageJsonPath = new URL('../../package.json', import.meta.url);
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
 const program = new Command();
 
 program
   .name('solopdf')
   .description('A CLI tool for PDF operations')
-  .version('0.0.3');
+  .version(packageJson.version);
 
 // Show header only when help is requested or no command is given
 if (
@@ -108,40 +135,40 @@ program
   .argument('<text>', 'The watermark text to add')
   .argument('<output>', 'The output path for the watermarked PDF')
   .option(
-    '-s, --font-size <size>',
+    '--font-size <size>',
     'Font size for the watermark (visual only)',
     '12',
   )
   .option(
-    '-c, --color <color>',
+    '--color <color>',
     'Color of the watermark text (visual only)',
     'black',
   )
   .option(
-    '-x, --x-position <x>',
+    '--x-position <x>',
     'X coordinate for watermark placement (visual only)',
   )
   .option(
-    '-y, --y-position <y>',
+    '--y-position <y>',
     'Y coordinate for watermark placement (visual only)',
   )
   .option(
-    '-p, --pages <pages>',
-    'Pages to watermark: comma-separated list (e.g., "1,3,5") or "all"',
+    '--pages <pages>',
+    'Pages to watermark: "even", "odd", "all", or comma-separated list (e.g., "1,3,5")',
     'all',
   )
   .option(
-    '-P, --position <position>',
+    '--position <position>',
     'Predefined position (visual only)',
     'bottom-right',
   )
   .option(
-    '-r, --rotation <degrees>',
+    '--rotation <degrees>',
     'Rotation angle in degrees (visual only)',
     '0',
   )
   .option(
-    '-o, --opacity <opacity>',
+    '--opacity <opacity>',
     'Opacity level 0.0 to 1.0 (visual only)',
     '1.0',
   )
@@ -168,6 +195,22 @@ program
           fs.accessSync(absolutePath);
         } catch {
           throw new Error(`Input file not found: ${absolutePath}`);
+        }
+
+        // First, get info about the PDF to determine pages
+        const pageCount = showProgress('📋 Analyzing PDF...', () =>
+          getPdfInfoBeforeSigning(absolutePath),
+        );
+        console.log(
+          chalk.magenta('\n📄 Document has'),
+          chalk.cyan.bold(pageCount),
+          chalk.magenta('pages'),
+        );
+
+        // Parse page numbers based on the new options
+        const pageNumbers = parsePageNumbers(options.pages, pageCount);
+        if (pageNumbers.length === 0) {
+          throw new Error('No valid pages selected for watermarking');
         }
 
         // Create output directory if it doesn't exist
@@ -210,31 +253,19 @@ program
           console.log(chalk.gray(`   👻 Opacity: ${opacity * 100}%`));
         }
 
-        // Parse pages
-        let targetPages: string = 'all pages';
-        if (options.pages !== 'all') {
-          const pageNumbers = options.pages
-            .split(',')
-            .map((p: string) => parseInt(p.trim()))
-            .filter((p: number) => !isNaN(p) && p > 0);
-
-          if (pageNumbers.length > 0) {
-            targetPages = `page${pageNumbers.length > 1 ? 's' : ''} ${pageNumbers.join(', ')}`;
-          }
+        // Display target pages
+        let targetPagesText: string;
+        if (options.pages === 'all') {
+          targetPagesText = 'all pages';
+        } else if (options.pages === 'even') {
+          targetPagesText = 'even pages';
+        } else if (options.pages === 'odd') {
+          targetPagesText = 'odd pages';
+        } else {
+          targetPagesText = `page${pageNumbers.length > 1 ? 's' : ''} ${pageNumbers.join(', ')}`;
         }
-        console.log(chalk.gray(`   📄 Target: ${targetPages}`));
+        console.log(chalk.gray(`   📄 Target: ${targetPagesText}`));
 
-        // First, get info about the PDF
-        const pageCount = showProgress('📋 Analyzing PDF...', () =>
-          getPdfInfoBeforeSigning(absolutePath),
-        );
-        console.log(
-          chalk.magenta('\n📄 Document has'),
-          chalk.cyan.bold(pageCount),
-          chalk.magenta('pages'),
-        );
-
-        // Create enhanced watermark text with metadata
         // Parse watermark options for the Rust function
         const signingOptions: SigningOptions = {
           fontSize: fontSize,
@@ -245,13 +276,7 @@ program
           yPosition: options.yPosition
             ? parseFloat(options.yPosition)
             : undefined,
-          pages:
-            options.pages !== 'all'
-              ? options.pages
-                  .split(',')
-                  .map((p: string) => parseInt(p.trim()))
-                  .filter((p: number) => !isNaN(p) && p > 0)
-              : undefined,
+          pages: pageNumbers,
           position: options.position || 'bottom-right',
           rotation: rotation,
           opacity: opacity,
@@ -271,201 +296,6 @@ program
         console.log(
           chalk.yellow('💡 Note:'),
           chalk.gray('Visual options are encoded in watermark metadata'),
-        );
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          console.error(chalk.red('❌ Error:'), chalk.white(err.message));
-        } else {
-          console.error(chalk.red('❌ Error:'), chalk.white(String(err)));
-        }
-        process.exit(1);
-      }
-    },
-  );
-
-// Legacy command for backward compatibility
-program
-  .command('sign')
-  .description(
-    chalk.yellow(
-      '(Legacy) Add a watermark text to a PDF file with options. Use "watermark" instead.',
-    ),
-  )
-  .argument('<file>', 'The path to the PDF file to watermark')
-  .argument('<text>', 'The watermark text to add')
-  .argument('<output>', 'The output path for the watermarked PDF')
-  .option(
-    '-s, --font-size <size>',
-    'Font size for the watermark (visual only)',
-    '12',
-  )
-  .option(
-    '-c, --color <color>',
-    'Color of the watermark text (visual only)',
-    'black',
-  )
-  .option(
-    '-x, --x-position <x>',
-    'X coordinate for watermark placement (visual only)',
-  )
-  .option(
-    '-y, --y-position <y>',
-    'Y coordinate for watermark placement (visual only)',
-  )
-  .option(
-    '-p, --pages <pages>',
-    'Pages to watermark: comma-separated list (e.g., "1,3,5") or "all"',
-    'all',
-  )
-  .option(
-    '-P, --position <position>',
-    'Predefined position (visual only)',
-    'bottom-right',
-  )
-  .option(
-    '-r, --rotation <degrees>',
-    'Rotation angle in degrees (visual only)',
-    '0',
-  )
-  .option(
-    '-o, --opacity <opacity>',
-    'Opacity level 0.0 to 1.0 (visual only)',
-    '1.0',
-  )
-  .action(
-    (
-      file: string,
-      watermarkText: string,
-      output: string,
-      options: Record<string, string>,
-    ) => {
-      console.log(
-        chalk.yellow(
-          '⚠️  Note: The "sign" command is deprecated. Please use "watermark" instead.',
-        ),
-      );
-
-      try {
-        const absolutePath = path.resolve(file);
-        const outputPath = path.resolve(output);
-
-        console.log(chalk.blue('📄 Input PDF:'), chalk.white(absolutePath));
-        console.log(chalk.blue('✍️  Output PDF:'), chalk.white(outputPath));
-        console.log(
-          chalk.blue('📝 Watermark text:'),
-          chalk.yellow(`"${watermarkText}"`),
-        );
-
-        // Check if input file exists
-        try {
-          fs.accessSync(absolutePath);
-        } catch {
-          throw new Error(`Input file not found: ${absolutePath}`);
-        }
-
-        // Create output directory if it doesn't exist
-        const outputDir = path.dirname(outputPath);
-        fs.mkdirSync(outputDir, { recursive: true });
-
-        // Copy input file to output location
-        console.log(chalk.cyan('📋 Creating copy...'));
-        fs.copyFileSync(absolutePath, outputPath);
-
-        // Display parsed options for user feedback
-        console.log(chalk.cyan('\n📋 Watermark Options:'));
-
-        const fontSize = parseFloat(options.fontSize || '12');
-        console.log(chalk.gray(`   📏 Font size: ${fontSize}`));
-
-        if (options.color && options.color !== 'black') {
-          console.log(chalk.gray(`   🎨 Color: ${options.color}`));
-        }
-
-        if (options.xPosition && options.yPosition) {
-          const x = parseFloat(options.xPosition);
-          const y = parseFloat(options.yPosition);
-          if (!isNaN(x) && !isNaN(y)) {
-            console.log(chalk.gray(`   📍 Position: (${x}, ${y})`));
-          }
-        }
-
-        if (options.position && options.position !== 'bottom-right') {
-          console.log(chalk.gray(`   📌 Position: ${options.position}`));
-        }
-
-        const rotation = parseFloat(options.rotation || '0');
-        if (rotation !== 0) {
-          console.log(chalk.gray(`   🔄 Rotation: ${rotation}°`));
-        }
-
-        const opacity = parseFloat(options.opacity || '1.0');
-        if (opacity !== 1.0 && opacity >= 0 && opacity <= 1) {
-          console.log(chalk.gray(`   👻 Opacity: ${opacity * 100}%`));
-        }
-
-        // Parse pages
-        let targetPages: string = 'all pages';
-        if (options.pages !== 'all') {
-          const pageNumbers = options.pages
-            .split(',')
-            .map((p: string) => parseInt(p.trim()))
-            .filter((p: number) => !isNaN(p) && p > 0);
-
-          if (pageNumbers.length > 0) {
-            targetPages = `page${pageNumbers.length > 1 ? 's' : ''} ${pageNumbers.join(', ')}`;
-          }
-        }
-        console.log(chalk.gray(`   📄 Target: ${targetPages}`));
-
-        // First, get info about the PDF
-        const pageCount = showProgress('📋 Analyzing PDF...', () =>
-          getPdfInfoBeforeSigning(absolutePath),
-        );
-        console.log(
-          chalk.magenta('\n📄 Document has'),
-          chalk.cyan.bold(pageCount),
-          chalk.magenta('pages'),
-        );
-
-        // Create enhanced watermark text with metadata
-        // Parse watermark options for the Rust function
-        const signingOptions: SigningOptions = {
-          fontSize: fontSize,
-          color: options.color || 'black',
-          xPosition: options.xPosition
-            ? parseFloat(options.xPosition)
-            : undefined,
-          yPosition: options.yPosition
-            ? parseFloat(options.yPosition)
-            : undefined,
-          pages:
-            options.pages !== 'all'
-              ? options.pages
-                  .split(',')
-                  .map((p: string) => parseInt(p.trim()))
-                  .filter((p: number) => !isNaN(p) && p > 0)
-              : undefined,
-          position: options.position || 'bottom-right',
-          rotation: rotation,
-          opacity: opacity,
-        };
-
-        // Add watermark to the PDF copy using the advanced Rust function with proper options
-        showProgress('✍️  Applying watermark...', () =>
-          signPdfWithOptions(outputPath, watermarkText, signingOptions),
-        );
-
-        console.log(
-          chalk.green('\n✅ Success!'),
-          chalk.bold('PDF watermarked successfully'),
-        );
-        console.log(chalk.blue('📁 Original:'), chalk.gray(absolutePath));
-        console.log(chalk.blue('📁 Watermarked:'), chalk.green(outputPath));
-        console.log(
-          chalk.yellow('💡 Note:'),
-          chalk.gray(
-            'This adds a text watermark to the PDF. For cryptographic signatures, use "sign-digital".',
-          ),
         );
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -595,7 +425,7 @@ program
     chalk.yellow('Generate a new cryptographic key pair for digital signing'),
   )
   .option(
-    '-o, --output <file>',
+    '--output <file>',
     'Save key pair to file (default: keypair.json)',
     'keypair.json',
   )
@@ -641,10 +471,10 @@ program
   .argument('<output>', 'The output path for the signed PDF')
   .argument('<keyfile>', 'The path to the key pair JSON file')
   .option(
-    '-t, --text <text>',
+    '--text <text>',
     'Visible signature text (default: "DIGITALLY SIGNED")',
   )
-  .option('-s, --save-sig <file>', 'Save signature info to file')
+  .option('--save-sig <file>', 'Save signature info to file')
   .action(
     async (
       file: string,

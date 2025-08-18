@@ -85,7 +85,7 @@ solopdf info document.pdf
 solopdf watermark input.pdf "Confidential" output.pdf
 
 # Generate cryptographic keys for signing
-solopdf generate-key -o my-keys.json
+solopdf generate-key --output my-keys.json
 
 # Sign a PDF with digital signature
 solopdf sign-digital contract.pdf signed-contract.pdf my-keys.json
@@ -123,14 +123,18 @@ Add a text watermark to a PDF document. The command takes three arguments:
 
 **Available options for watermarking:**
 
-- `-s, --font-size <size>`: Font size for the watermark (default: 12)
-- `-c, --color <color>`: Color of the watermark text (default: black)
-- `-x, --x-position <x>`: X coordinate for watermark placement
-- `-y, --y-position <y>`: Y coordinate for watermark placement
-- `-p, --pages <pages>`: Pages to watermark: comma-separated list (e.g., "1,3,5") or "all" (default: all)
-- `-P, --position <position>`: Predefined position (default: bottom-right)
-- `-r, --rotation <degrees>`: Rotation angle in degrees (default: 0)
-- `-o, --opacity <opacity>`: Opacity level 0.0 to 1.0 (default: 1.0)
+- `--font-size <size>`: Font size for the watermark (default: 12)
+- `--color <color>`: Color of the watermark text (default: black)
+- `--x-position <x>`: X coordinate for watermark placement
+- `--y-position <y>`: Y coordinate for watermark placement
+- `--pages <pages>`: Pages to watermark (default: all)
+  - `all` - watermark all pages
+  - `even` - watermark only even pages (2, 4, 6, etc.)
+  - `odd` - watermark only odd pages (1, 3, 5, etc.)
+  - `"1,2,5"` - watermark specific pages (comma-separated list)
+- `--position <position>`: Predefined position (default: bottom-right)
+- `--rotation <degrees>`: Rotation angle in degrees (default: 0)
+- `--opacity <opacity>`: Opacity level 0.0 to 1.0 (default: 1.0)
 
 **Example with options:**
 
@@ -138,19 +142,9 @@ Add a text watermark to a PDF document. The command takes three arguments:
 solopdf watermark document.pdf "DRAFT" watermarked.pdf \
   --font-size 14 \
   --position "top-right" \
-  --pages "1,3" \
+  --pages "even" \
   --opacity 0.7
 ```
-
-### Legacy Sign Command
-
-For backward compatibility, the `sign` command is still available but deprecated:
-
-```bash
-solopdf sign input.pdf "Your Text" output.pdf
-```
-
-> **Note:** The `sign` command creates a text watermark in the PDF structure but does not create a legally-binding or verifiable digital signature. For real digital signatures, use the digital signature commands below.
 
 ## Digital Signatures 🔐
 
@@ -234,7 +228,7 @@ Share this checksum with recipients so they can verify file integrity.
 
 ```bash
 # 1. Generate keys
-solopdf generate-key -o my-keypair.json
+solopdf generate-key --output my-keypair.json
 # Keys are saved securely in JSON format
 
 # 2. Sign a document
@@ -268,32 +262,35 @@ The CLI provides the following commands (use `solopdf --help` for more details):
 | `pages`              | ✅     | Get the number of pages in a PDF            | `solopdf pages <file.pdf>`                                                             |
 | `info`               | ✅     | Get detailed PDF information                | `solopdf info <file.pdf>`                                                              |
 | `watermark`          | ✅     | Add a text watermark to a PDF               | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]`                        |
-| `sign`               | ⚠️     | (Legacy) Add a text watermark (deprecated)  | `solopdf sign <input.pdf> "<text>" <output.pdf> [options]`                             |
-| `generate-key`       | ✅     | Generate cryptographic key pair             | `solopdf generate-key [-o keypair.json]`                                               |
-| `sign-digital`       | ✅     | Create a digital signature                  | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]`                |
+| `generate-key`       | ✅     | Generate cryptographic key pair             | `solopdf generate-key [--output keypair.json]`                                         |
+| `sign-digital`       | ✅     | Create a digital signature                  | `solopdf sign-digital <input.pdf> <output.pdf> <keypair.json> [options]`              |
 | `verify-signature`   | ✅     | Verify a digital signature                  | `solopdf verify-signature <file.pdf> <sig.json> <keypair.json>`                        |
 | `checksum`           | ✅     | Get file checksum for verification          | `solopdf checksum <file.pdf>`                                                          |
 | `--help`             | ✅     | Show help information                       | `solopdf --help` or `solopdf <command> --help`                                         |
 | `--version`          | ✅     | Show version number                         | `solopdf --version`                                                                    |
 
-### Watermark/Sign Command Options
+### Watermark Command Options
 
-Both `watermark` and legacy `sign` support these options:
+The `watermark` command supports these options:
 
-- `-s, --font-size <size>`: Font size for the watermark (default: 12)
-- `-c, --color <color>`: Color of the watermark text (default: black)
-- `-x, --x-position <x>`: X coordinate for watermark placement
-- `-y, --y-position <y>`: Y coordinate for watermark placement
-- `-p, --pages <pages>`: Pages to watermark: comma-separated list (e.g., "1,3,5") or "all" (default: all)
-- `-P, --position <position>`: Predefined position (default: bottom-right)
-- `-r, --rotation <degrees>`: Rotation angle in degrees (default: 0)
-- `-o, --opacity <opacity>`: Opacity level 0.0 to 1.0 (default: 1.0)
+- `--font-size <size>`: Font size for the watermark (default: 12)
+- `--color <color>`: Color of the watermark text (default: black)
+- `--x-position <x>`: X coordinate for watermark placement
+- `--y-position <y>`: Y coordinate for watermark placement
+- `--pages <pages>`: Pages to watermark (default: all)
+  - `all` - watermark all pages
+  - `even` - watermark only even pages
+  - `odd` - watermark only odd pages
+  - `"1,2,5"` - watermark specific pages (comma-separated)
+- `--position <position>`: Predefined position (default: bottom-right)
+- `--rotation <degrees>`: Rotation angle in degrees (default: 0)
+- `--opacity <opacity>`: Opacity level 0.0 to 1.0 (default: 1.0)
 
 ### Digital Signature Options
 
 - `sign-digital`:
-  - `-t, --text <text>`: Visible signature text (default: "DIGITALLY SIGNED")
-  - `-s, --save-sig <file>`: Save signature info to file
+  - `--text <text>`: Visible signature text (default: "DIGITALLY SIGNED")
+  - `--save-sig <file>`: Save signature info to file
 
 ---
 
@@ -452,7 +449,7 @@ solopdf info document.pdf
 solopdf watermark input.pdf "Confidential" output.pdf
 
 # ✅ Digital Signatures
-solopdf generate-key -o keys.json
+solopdf generate-key --output keys.json
 solopdf sign-digital contract.pdf signed.pdf keys.json
 solopdf verify-signature signed.pdf signature.json keys.json
 solopdf checksum document.pdf

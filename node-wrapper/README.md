@@ -64,33 +64,35 @@ Get detailed information about a PDF file, including page count and file path.
 ### Sign a PDF
 
 ```bash
-solopdf sign input.pdf "Your Signature Text" output.pdf
+solopdf watermark input.pdf "Your Signature Text" output.pdf
 ```
 
-Add a signature field to a PDF document with the specified signature text. The command takes three arguments:
+Add a watermark to a PDF document with the specified text. The command takes three arguments:
 
-- `input.pdf`: The source PDF file to sign
-- `"Your Signature Text"`: The text to include in the signature
-- `output.pdf`: The path where the signed PDF will be saved
+- `input.pdf`: The source PDF file to watermark
+- `"Your Signature Text"`: The text to include in the watermark
+- `output.pdf`: The path where the watermarked PDF will be saved
 
-**Available options for signing:**
+**Available options for watermarking:**
 
-- `-s, --font-size <size>`: Font size for the signature (default: 12)
-- `-c, --color <color>`: Color of the signature text (default: black)
-- `-x, --x-position <x>`: X coordinate for signature placement
-- `-y, --y-position <y>`: Y coordinate for signature placement
-- `-p, --pages <pages>`: Pages to sign: comma-separated list (e.g., "1,3,5") or "all" (default: all)
-- `-P, --position <position>`: Predefined position (default: bottom-right)
-- `-r, --rotation <degrees>`: Rotation angle in degrees (default: 0)
-- `-o, --opacity <opacity>`: Opacity level 0.0 to 1.0 (default: 1.0)
+- `--font-size <size>`: Font size for the watermark (default: 12)
+- `--color <color>`: Color of the watermark text (default: black)
+- `--x-position <x>`: X coordinate for watermark placement
+- `--y-position <y>`: Y coordinate for watermark placement
+- `--pages <pages>`: Pages to watermark (default: all)
+  - `all` - watermark all pages
+  - `even` - watermark only even pages
+  - `odd` - watermark only odd pages  
+  - `"1,2,5"` - watermark specific pages (comma-separated)
+- `--position <position>`: Predefined position (default: bottom-right)
+- `--rotation <degrees>`: Rotation angle in degrees (default: 0)
+- `--opacity <opacity>`: Opacity level 0.0 to 1.0 (default: 1.0)
 
 **Example with options:**
 
 ```bash
-solopdf sign document.pdf "John Doe" signed.pdf --font-size 14 --position "top-right" --pages "1,3"
+solopdf watermark document.pdf "John Doe" signed.pdf --font-size 14 --position "top-right" --pages "odd"
 ```
-
-**Note:** This creates a signature field in the PDF structure but does not create a legally-binding or verifiable digital signature. For real digital signatures, cryptographic capabilities are required.
 
 ## Available Commands
 
@@ -100,7 +102,7 @@ The CLI provides the following commands (use `solopdf --help` for more details):
 | ----------- | -------------------------------- | --------------------------------------------------------------- |
 | `pages`     | Get the number of pages in a PDF | `solopdf pages <file.pdf>`                                      |
 | `info`      | Get detailed PDF information     | `solopdf info <file.pdf>`                                       |
-| `sign`      | Add a signature to a PDF         | `solopdf sign <input.pdf> "<signature>" <output.pdf> [options]` |
+| `watermark` | Add a watermark to a PDF         | `solopdf watermark <input.pdf> "<text>" <output.pdf> [options]` |
 | `--help`    | Show help information            | `solopdf --help` or `solopdf <command> --help`                  |
 | `--version` | Show version number              | `solopdf --version`                                             |
 
