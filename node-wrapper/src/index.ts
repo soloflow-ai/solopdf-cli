@@ -272,9 +272,6 @@ program
         }
         console.log(chalk.gray(`   📄 Target: ${targetPagesText}`));
 
-        console.error('DEBUG: About to call signPdfWithOptions...');
-        process.stdout.write('DEBUG: STDOUT WRITE TEST\n');
-
         // Parse watermark options for the Rust function
         const signingOptions: SigningOptions = {
           fontSize: fontSize,
@@ -293,13 +290,11 @@ program
 
         // Add watermark to the PDF copy using the advanced Rust function with proper options
         showProgress('✍️  Applying watermark...', () => {
-          const result = signPdfWithOptions(
+          return signPdfWithOptions(
             outputPath,
             watermarkText,
             signingOptions,
           );
-          console.log('DEBUG: signPdfWithOptions completed successfully');
-          return result;
         });
 
         console.log(

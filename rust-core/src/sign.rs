@@ -187,14 +187,11 @@ pub fn sign_pdf_with_options(
     signature_text: String,
     options: Option<SigningOptions>,
 ) -> Result<()> {
-    eprintln!("DEBUG: sign_pdf_with_options called with file: {}", file_path);
-    eprintln!("DEBUG: signature_text: {}", signature_text);
-    eprintln!("DEBUG: options: {:?}", options);
     let opts = options.unwrap_or(SigningOptions {
         font_size: Some(12.0),
         color: Some("black".to_string()),
-        x_position: Some(400.0),
-        y_position: Some(50.0),
+        x_position: None,
+        y_position: None,
         pages: None,
         position: Some("bottom-right".to_string()),
         rotation: Some(0.0),
@@ -220,16 +217,16 @@ pub fn sign_pdf_with_options(
 
     // Determine which pages to sign
     let target_pages: Vec<lopdf::ObjectId> = if let Some(page_nums) = &opts.pages {
-        // Get all pages as ordered list 
+        // Get all pages as ordered list
         let page_ids: Vec<lopdf::ObjectId> = pages.values().copied().collect();
         let mut filtered_pages = Vec::new();
-        
+
         for page_num in page_nums {
             if *page_num > 0 && (*page_num as usize) <= page_ids.len() {
                 filtered_pages.push(page_ids[(*page_num - 1) as usize]);
             }
         }
-        
+
         filtered_pages
     } else {
         pages.values().copied().collect()
