@@ -290,11 +290,7 @@ program
 
         // Add watermark to the PDF copy using the advanced Rust function with proper options
         showProgress('✍️  Applying watermark...', () => {
-          return signPdfWithOptions(
-            outputPath,
-            watermarkText,
-            signingOptions,
-          );
+          return signPdfWithOptions(outputPath, watermarkText, signingOptions);
         });
 
         console.log(
