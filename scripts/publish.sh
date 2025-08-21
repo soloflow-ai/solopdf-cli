@@ -149,6 +149,8 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
+echo -e  "$VERSION_BUMP" Version bump vs "$CURRENT_VERSION"
+
 # Commit version changes if any
 if [[ $VERSION_BUMP != "current" ]]; then
     echo -e "${YELLOW}💾 Committing version changes...${NC}"
