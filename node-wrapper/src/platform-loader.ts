@@ -33,14 +33,30 @@ function tryLoadPlatformBinary() {
   try {
     const packageName = `solopdf-cli-${platformName}`;
     const require = createRequire(import.meta.url);
-    return require(packageName);
+    const platformModule = require(packageName);
+    return platformModule;
   } catch (firstError) {
     errors.push(
       `Platform package 'solopdf-cli-${platformName}': ${getErrorMessage(firstError)}`,
     );
   }
 
-  // Strategy 2: Try to load from local rust-core directory (development/local build)
+  // Strategy 2: Try to load platform-specific binary from local rust-core directory
+  try {
+    const require = createRequire(import.meta.url);
+    const platformSpecificPath = path.join(__dirname, 'rust-core', `index.${platformName}.node`);
+    
+    if (fs.existsSync(platformSpecificPath)) {
+      const testModule = require(platformSpecificPath);
+      if (testModule && typeof testModule.getPageCount === 'function') {
+        return testModule;
+      }
+    }
+  } catch (platformError) {
+    errors.push(`Platform-specific binary load failed: ${getErrorMessage(platformError)}`);
+  }
+
+  // Strategy 3: Try to load from generic local rust-core directory (development/local build)
   try {
     const localPath = path.join(__dirname, 'rust-core', 'index.node');
     if (fs.existsSync(localPath)) {
@@ -51,16 +67,23 @@ function tryLoadPlatformBinary() {
         return testModule;
       }
     } else {
-      errors.push(`Local binary not found at: ${localPath}`);
+      errors.push(`Generic binary not found at: ${localPath}`);
     }
   } catch (secondError) {
-    errors.push(`Local binary load failed: ${getErrorMessage(secondError)}`);
+    errors.push(`Generic binary load failed: ${getErrorMessage(secondError)}`);
   }
 
-  // Strategy 3: Try the JavaScript wrapper (fallback)
+  // Strategy 4: Try the JavaScript wrapper (fallback) - but use dynamic import for ES modules
   try {
-    const require = createRequire(import.meta.url);
-    return require('./rust-core/index.js');
+    const jsWrapperPath = path.join(__dirname, 'rust-core', 'index.js');
+    if (fs.existsSync(jsWrapperPath)) {
+      // Use dynamic import instead of require for ES modules
+      const require = createRequire(import.meta.url);
+      const jsModule = require(jsWrapperPath);
+      if (jsModule && typeof jsModule.getPageCount === 'function') {
+        return jsModule;
+      }
+    }
   } catch (thirdError) {
     errors.push(`JavaScript wrapper failed: ${getErrorMessage(thirdError)}`);
   }
@@ -73,7 +96,10 @@ function tryLoadPlatformBinary() {
       `This platform might not be supported yet. To resolve this:\n` +
       `1. Check if 'solopdf-cli-${platformName}' package exists on NPM\n` +
       `2. If missing, this platform package hasn't been published yet\n` +
-      `3. Try installing from GitHub Actions artifacts or building locally\n\n` +
+      `3. Try installing from GitHub Actions artifacts or building locally\n` +
+      `4. Report this issue at: https://github.com/soloflow-ai/solopdf-cli/issues\n\n` +
+      `Platform: ${process.platform}-${process.arch}\n` +
+      `Node.js: ${process.version}\n` +
       `Detailed errors: ${errorDetails}`,
   );
 }
