@@ -398,7 +398,23 @@
       "problemMatcher": []
     },
 
-    // === CI/CD & GitHub Actions Monitoring ===
+    {
+      "label": "Monitor GitHub Actions",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🔍 GITHUB ACTIONS BUILD STATUS' && echo '═══════════════════════════════════════' && if command -v gh >/dev/null 2>&1; then echo 'Latest builds:'; gh run list --limit 5 --json status,conclusion,createdAt,name,headBranch 2>/dev/null | node -e \"const runs = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')); runs.forEach((run, i) => { const date = new Date(run.createdAt).toLocaleString(); const status = run.conclusion === 'success' ? '✅' : run.conclusion === 'failure' ? '❌' : run.status === 'in_progress' ? '🔄' : '⚠️'; const badge = i === 0 ? ' 🆕' : ''; console.log(\\`   \\${status} \\${run.name} (\\${run.headBranch}) - \\${date}\\${badge}\\`); });\" 2>/dev/null || echo '❌ Could not fetch runs'; else echo '❌ GitHub CLI not available'; fi"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
     {
       "label": "Check GitHub Actions Status",
       "type": "shell",
