@@ -8,6 +8,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build-binaries:
     strategy:
@@ -17,15 +20,19 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             platform: linux-x64-gnu
+            downloadUrl: https://nodejs.org/dist/v20.15.0/node-v20.15.0-linux-x64.tar.xz
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             platform: win32-x64-msvc
+            downloadUrl: https://nodejs.org/dist/v20.15.0/node-v20.15.0-win-x64.zip
           - host: macos-13
             target: x86_64-apple-darwin
             platform: darwin-x64
+            downloadUrl: https://nodejs.org/dist/v20.15.0/node-v20.15.0-darwin-x64.tar.gz
           - host: macos-14
             target: aarch64-apple-darwin
             platform: darwin-arm64
+            downloadUrl: https://nodejs.org/dist/v20.15.0/node-v20.15.0-darwin-arm64.tar.gz
 
     name: Build ${{ matrix.settings.platform }}
     runs-on: ${{ matrix.settings.host }}
@@ -59,11 +66,77 @@ jobs:
         working-directory: rust-core
         run: npx napi build --release --platform --target ${{ matrix.settings.target }}
 
+      - name: Create platform package
+        shell: bash
+        run: |
+          # Get version from package.json
+          VERSION=$(node -p "require('./node-wrapper/package.json').version")
+          PLATFORM="${{ matrix.settings.platform }}"
+          PACKAGE_NAME="solopdf-cli-$PLATFORM"
+          
+          # Create platform package directory
+          mkdir -p "platform-packages/$PACKAGE_NAME"
+          cd "platform-packages/$PACKAGE_NAME"
+          
+          # Create package.json
+          cat > package.json << EOF
+          {
+            "name": "$PACKAGE_NAME",
+            "version": "$VERSION",
+            "description": "SoloPDF CLI native binary for $PLATFORM",
+            "main": "index.node",
+            "files": ["index.node"],
+            "license": "ISC",
+            "repository": {
+              "type": "git",
+              "url": "git+https://github.com/soloflow-ai/solopdf-cli.git"
+            },
+            "publishConfig": {
+              "access": "public"
+            },
+            "engines": {
+              "node": ">=18.0.0"
+            },
+          EOF
+          
+          # Add platform-specific CPU/OS metadata
+          case "$PLATFORM" in
+            "win32-x64-msvc")
+              echo '    "cpu": ["x64"],' >> package.json
+              echo '    "os": ["win32"]' >> package.json
+              ;;
+            "linux-x64-gnu")
+              echo '    "cpu": ["x64"],' >> package.json
+              echo '    "os": ["linux"]' >> package.json
+              ;;
+            "darwin-x64")
+              echo '    "cpu": ["x64"],' >> package.json
+              echo '    "os": ["darwin"]' >> package.json
+              ;;
+            "darwin-arm64")
+              echo '    "cpu": ["arm64"],' >> package.json
+              echo '    "os": ["darwin"]' >> package.json
+              ;;
+          esac
+          
+          echo "  }" >> package.json
+          
+          # Find and copy the binary
+          NODE_FILE=$(find "../../rust-core" -name "*${PLATFORM}.node" -o -name "index.node" | head -1)
+          if [ -n "$NODE_FILE" ] && [ -f "$NODE_FILE" ]; then
+            cp "$NODE_FILE" index.node
+            echo "✅ Copied binary: $(basename "$NODE_FILE") ($(stat -c%s index.node 2>/dev/null || stat -f%z index.node) bytes)"
+          else
+            echo "❌ No binary found for $PLATFORM"
+            exit 1
+          fi
+
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.settings.platform }}
-          path: rust-core/index.${{ matrix.settings.platform }}.node
+          path: |
+            platform-packages/solopdf-cli-${{ matrix.settings.platform }}/
           if-no-files-found: error
 
   build-package:
@@ -86,28 +159,40 @@ jobs:
         with:
           version: latest
 
-      - name: Download all binaries
+      - name: Download all platform binaries
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Copy binaries to rust-core
+      - name: Setup platform binaries for main package
         run: |
+          # Create rust-core directory if it doesn't exist
           mkdir -p rust-core
-          cp artifacts/binary-linux-x64-gnu/*.node rust-core/index.linux-x64-gnu.node || true
-          cp artifacts/binary-win32-x64-msvc/*.node rust-core/index.win32-x64-msvc.node || true
-          cp artifacts/binary-darwin-x64/*.node rust-core/index.darwin-x64.node || true
-          cp artifacts/binary-darwin-arm64/*.node rust-core/index.darwin-arm64.node || true
-
-          # Ensure we have at least the Linux binary as the generic one
-          cp rust-core/index.linux-x64-gnu.node rust-core/index.node
-
-          # Create the JS wrapper and TypeScript definitions
+          
+          # Copy platform-specific binaries for main package
+          ls -la artifacts/ || echo "No artifacts found"
+          
+          # Copy each platform's binary to rust-core
+          for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do
+            ARTIFACT_DIR="artifacts/binary-$platform/solopdf-cli-$platform"
+            if [ -f "$ARTIFACT_DIR/index.node" ]; then
+              cp "$ARTIFACT_DIR/index.node" "rust-core/index.$platform.node"
+              echo "✅ Copied $platform binary ($(stat -c%s "rust-core/index.$platform.node" 2>/dev/null || stat -f%z "rust-core/index.$platform.node") bytes)"
+            else
+              echo "⚠️  Platform binary not found: $ARTIFACT_DIR/index.node"
+            fi
+          done
+          
+          # Use Linux binary as the generic fallback
+          if [ -f "rust-core/index.linux-x64-gnu.node" ]; then
+            cp "rust-core/index.linux-x64-gnu.node" "rust-core/index.node"
+            echo "✅ Linux binary set as generic fallback"
+          fi
+          
+          # Create the JavaScript wrapper and TypeScript definitions
           cat > rust-core/index.js << 'EOF'
           const { createRequire } = require('module');
-          const { fileURLToPath } = require('url');
-          const path = require('path');
-
+          
           function getPlatform() {
             const { platform, arch } = process;
             switch (platform) {
@@ -121,10 +206,10 @@ jobs:
                 throw new Error(`Unsupported platform: ${platform}-${arch}`);
             }
           }
-
+          
           const platformName = getPlatform();
           const require = createRequire(import.meta.url);
-
+          
           try {
             module.exports = require(`./index.${platformName}.node`);
           } catch (e) {
@@ -135,7 +220,7 @@ jobs:
             }
           }
           EOF
-
+          
           cat > rust-core/index.d.ts << 'EOF'
           export interface SigningOptions {
             fontSize?: number;
@@ -147,7 +232,7 @@ jobs:
             rotation?: number;
             opacity?: number;
           }
-
+          
           export declare function getPageCount(filePath: string): number;
           export declare function signPdfWithOptions(inputPath: string, outputPath: string, signatureText: string, options?: SigningOptions): void;
           export declare function getPdfInfoBeforeSigning(filePath: string): any;
@@ -178,3 +263,4 @@ jobs:
             node-wrapper/dist/
             node-wrapper/package.json
             node-wrapper/README.md
+            rust-core/

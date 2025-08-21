@@ -3,21 +3,18 @@
   "version": "1.2.0",
   "description": "SoloPDF CLI native binary for linux-x64-gnu",
   "main": "index.node",
-  "files": [
-    "index.node"
-  ],
+  "files": ["index.node"],
   "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/soloflow-ai/solopdf-cli.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "cpu": [
-    "x64"
-  ],
-  "os": [
-    "linux"
-  ]
+  }
+  ,"cpu": ["x64"],
+  "os": ["linux"]
 }

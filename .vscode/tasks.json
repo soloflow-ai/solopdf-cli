@@ -245,16 +245,18 @@
 
     // === Platform Package Tasks ===
     {
-      "label": "Create Platform Packages",
+      "label": "Build Platform Packages",
       "type": "shell",
-      "command": "bash",
-      "args": [
-        "-c",
-        "mkdir -p platform-packages && rm -rf platform-packages/* && for target in win32-x64-msvc linux-x64-gnu darwin-x64 darwin-arm64; do mkdir -p platform-packages/solopdf-cli-$target && cd platform-packages/solopdf-cli-$target && echo '{\"name\": \"solopdf-cli-'$target'\", \"version\": \"1.0.0\", \"description\": \"SoloPDF CLI native binary for '$target'\", \"main\": \"index.node\", \"files\": [\"index.node\"], \"license\": \"ISC\"}' > package.json && cd ../..; done"
-      ],
+      "command": "./scripts/build-platform-packages.sh",
       "group": "build",
       "isBackground": false,
-      "problemMatcher": []
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
     },
     {
       "label": "Test Platform Loading",
@@ -262,11 +264,50 @@
       "command": "bash",
       "args": [
         "-c",
-        "cd node-wrapper && node -e \"try { const mod = require('./dist/index.js'); console.log('✅ Platform loading successful'); console.log('Available functions:', Object.keys(mod)); } catch(e) { console.error('❌ Platform loading failed:', e.message); process.exit(1); }\""
+        "cd node-wrapper && node -e \"try { const mod = require('./dist/index.js'); console.log('✅ Platform loading successful'); console.log('Available functions:', Object.keys(mod)); console.log('Testing getPageCount:', typeof mod.getPageCount === 'function' ? '✅ Available' : '❌ Missing'); } catch(e) { console.error('❌ Platform loading failed:', e.message); process.exit(1); }\""
       ],
       "group": "test",
       "isBackground": false,
       "dependsOn": ["Build All"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Test All Platform Packages",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🧪 Testing platform packages...' && for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do echo \"Testing solopdf-cli-$platform...\"; if [ -f \"platform-packages/solopdf-cli-$platform/index.node\" ]; then size=$(stat -c%s \"platform-packages/solopdf-cli-$platform/index.node\" 2>/dev/null || stat -f%z \"platform-packages/solopdf-cli-$platform/index.node\" 2>/dev/null || echo '0'); if [ \"$size\" -gt 1000000 ]; then echo \"✅ $platform: $(echo \"scale=1; $size/1024/1024\" | bc 2>/dev/null || awk \"BEGIN{printf \\\"%.1f\\\", $size/1024/1024}\")MB\"; else echo \"⚠️  $platform: ${size}B (placeholder)\"; fi; else echo \"❌ $platform: missing\"; fi; done"
+      ],
+      "group": "test", 
+      "isBackground": false,
+      "dependsOn": ["Build Platform Packages"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Test CLI Cross-Platform",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd node-wrapper && echo '🧪 Testing CLI with current platform binary...' && node dist/cli.js --version && echo '✅ CLI working on current platform' && echo 'Platform info:' && node -e 'console.log(`Platform: ${process.platform}-${process.arch}`); console.log(`Node.js: ${process.version}`);'"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "dependsOn": ["Build All"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Platform Packages",
+      "type": "shell", 
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '📦 Validating platform packages...' && for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do echo \"Validating solopdf-cli-$platform...\"; package_dir=\"platform-packages/solopdf-cli-$platform\"; if [ -f \"$package_dir/package.json\" ] && [ -f \"$package_dir/index.node\" ]; then echo \"✅ Structure OK\"; node -e \"const pkg = require('./$package_dir/package.json'); console.log('  Name:', pkg.name); console.log('  Version:', pkg.version); console.log('  CPU:', pkg.cpu); console.log('  OS:', pkg.os);\"; else echo \"❌ Missing files\"; fi; echo ''; done"
+      ],
+      "group": "test",
+      "isBackground": false, 
+      "dependsOn": ["Build Platform Packages"],
       "problemMatcher": []
     },
 
@@ -367,15 +408,46 @@
       "isBackground": false
     },
     {
+      "label": "Full Platform Pipeline",
+      "dependsOrder": "sequence", 
+      "dependsOn": [
+        "Full CI Pipeline",
+        "Build Platform Packages",
+        "Test All Platform Packages",
+        "Validate Platform Packages",
+        "Test CLI Cross-Platform"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Pre-Publish Check",
       "dependsOrder": "sequence",
       "dependsOn": [
-        "Full CI Pipeline",
+        "Full Platform Pipeline",
         "Validate for Publish",
         "Dry Run Publish"
       ],
       "group": "test",
       "isBackground": false
+    },
+    {
+      "label": "Publish Platform Packages",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "if [ -z \"$NPM_TOKEN\" ]; then echo '❌ NPM_TOKEN not set. Please set it first: export NPM_TOKEN=your_token'; exit 1; fi; ./scripts/build-platform-packages.sh --publish"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": []
     }
   ]
 }

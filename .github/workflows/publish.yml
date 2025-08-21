@@ -1,8 +1,5 @@
 name: Publish to NPM
 
-# Note: macOS support temporarily disabled due to NAPI linking issues
-# Working platforms: Windows x64, Linux x64
-
 on:
   release:
     types: [published]
@@ -12,53 +9,40 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-binaries:
+  build-platform-binaries:
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            name: win32-x64-msvc
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            name: linux-x64-gnu
-          # TODO: macOS support - NAPI linking issues need to be resolved
-          # - target: x86_64-apple-darwin
-          #   os: macos-latest
-          #   name: darwin-x64
-          # - target: aarch64-apple-darwin
-          #   os: macos-latest
-          #   name: darwin-arm64
+        settings:
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x64-gnu
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win32-x64-msvc
+          - host: macos-13
+            target: x86_64-apple-darwin
+            platform: darwin-x64
+          - host: macos-14
+            target: aarch64-apple-darwin
+            platform: darwin-arm64
 
-    runs-on: ${{ matrix.os }}
-    name: Build ${{ matrix.name }}
+    name: Build ${{ matrix.settings.platform }}
+    runs-on: ${{ matrix.settings.host }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          components: rustfmt, clippy
-          target: ${{ matrix.target }}
-
-      - name: Verify Rust setup
-        run: |
-          echo "=== Rust Setup Verification ==="
-          rustc --version
-          cargo --version
-          rustup show
-          echo "Installed targets:"
-          rustup target list --installed
-          echo "Default host: $(rustc -vV | grep host | cut -d' ' -f2)"
+          targets: ${{ matrix.settings.target }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Use Node.js 20 for better NAPI compatibility
-          node-version: "20.x"
+          node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
       - name: Cache Rust dependencies
@@ -68,12 +52,13 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             rust-core/target
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('rust-core/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ matrix.settings.target }}-cargo-${{ hashFiles('rust-core/Cargo.lock') }}
 
       - name: Validate Rust code (Linux only)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.settings.host == 'ubuntu-latest'
         working-directory: rust-core
         run: |
+          source ~/.cargo/env 2>/dev/null || true
           cargo fmt --check
           cargo clippy --all-targets --all-features -- -D warnings
           cargo test --verbose
@@ -82,37 +67,32 @@ jobs:
         working-directory: rust-core
         shell: bash
         run: |
-          # Install dependencies first
+          source ~/.cargo/env 2>/dev/null || true
           npm install
+          npx napi build --release --platform --target ${{ matrix.settings.target }}
 
-          # Build for the target
-          echo "Building for target: ${{ matrix.target }}"
-          echo "Runner OS: ${{ matrix.os }}"
-          echo "Runner architecture: $(uname -m)"
-          echo "Node architecture: $(node -p 'process.arch')"
-
-          # Build with explicit target for Windows and Linux
-          npx napi build --release --platform --target ${{ matrix.target }}
-
-      - name: Verify build output
-        working-directory: rust-core
+      - name: Create and publish platform package
         shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "Checking build artifacts..."
-          ls -la *.node *.js *.d.ts 2>/dev/null || echo "No build artifacts found"
-
-      - name: Create platform package
-        shell: bash
-        run: |
-          mkdir -p platform-packages/solopdf-cli-${{ matrix.name }}
-          cd platform-packages/solopdf-cli-${{ matrix.name }}
-
-          # Create package.json using Node.js to avoid shell compatibility issues
+          # Get version from package.json
+          VERSION=$(node -p "require('./node-wrapper/package.json').version")
+          PLATFORM="${{ matrix.settings.platform }}"
+          PACKAGE_NAME="solopdf-cli-$PLATFORM"
+          
+          echo "Building platform package: $PACKAGE_NAME v$VERSION"
+          
+          # Create platform package directory
+          mkdir -p "platform-packages/$PACKAGE_NAME"
+          cd "platform-packages/$PACKAGE_NAME"
+          
+          # Create package.json
           node -e "
           const pkg = {
-            name: 'solopdf-cli-${{ matrix.name }}',
-            version: '1.0.0',
-            description: 'SoloPDF CLI native binary for ${{ matrix.name }}',
+            name: '$PACKAGE_NAME',
+            version: '$VERSION',
+            description: 'SoloPDF CLI native binary for $PLATFORM',
             main: 'index.node',
             files: ['index.node'],
             license: 'ISC',
@@ -120,108 +100,174 @@ jobs:
               type: 'git',
               url: 'git+https://github.com/soloflow-ai/solopdf-cli.git'
             },
-            cpu: ['${{ matrix.name == 'win32-x64-msvc' && 'x64' || 'x64' }}'],
-            os: ['${{ matrix.name == 'win32-x64-msvc' && 'win32' || 'linux' }}']
+            publishConfig: {
+              access: 'public'
+            },
+            engines: {
+              node: '>=18.0.0'
+            }
           };
+          
+          // Add platform-specific metadata
+          switch ('$PLATFORM') {
+            case 'win32-x64-msvc':
+              pkg.cpu = ['x64'];
+              pkg.os = ['win32'];
+              break;
+            case 'linux-x64-gnu':
+              pkg.cpu = ['x64'];
+              pkg.os = ['linux'];
+              break;
+            case 'darwin-x64':
+              pkg.cpu = ['x64'];
+              pkg.os = ['darwin'];
+              break;
+            case 'darwin-arm64':
+              pkg.cpu = ['arm64'];
+              pkg.os = ['darwin'];
+              break;
+          }
+          
           require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
-
-          # Find and copy the platform-specific .node file
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Windows: look for .node files in rust-core
-            NODE_FILE=$(ls ../../rust-core/*.node 2>/dev/null | head -1)
+          
+          # Find and copy the binary
+          NODE_FILE=\$(find \"../../rust-core\" -name \"*\${PLATFORM}.node\" -o -name \"index.node\" | head -1)
+          if [ -n \"\$NODE_FILE\" ] && [ -f \"\$NODE_FILE\" ]; then
+            cp \"\$NODE_FILE\" index.node
+            SIZE=\$(stat -c%s index.node 2>/dev/null || stat -f%z index.node)
+            echo \"✅ Copied binary: \$(basename \"\$NODE_FILE\") (\$SIZE bytes)\"
+            
+            # Only publish if binary is substantial (>1MB)
+            if [ \"\$SIZE\" -gt 1000000 ]; then
+              echo \"📦 Publishing \$PACKAGE_NAME...\"
+              npm publish
+              echo \"✅ Published \$PACKAGE_NAME v\$VERSION\"
+            else
+              echo \"⚠️  Binary too small, skipping publish: \$SIZE bytes\"
+            fi
           else
-            # Linux: use find
-            NODE_FILE=$(find ../../rust-core -name "*.node" -type f | head -1)
-          fi
-
-          if [ -n "$NODE_FILE" ] && [ -f "$NODE_FILE" ]; then
-            echo "✓ Found .node file: $NODE_FILE"
-            cp "$NODE_FILE" index.node
-          else
-            echo "✗ No .node file found"
-            ls -la ../../rust-core/ || echo "rust-core directory not found"
+            echo \"❌ No binary found for \$PLATFORM\"
             exit 1
           fi
 
-      - name: Publish platform package
-        working-directory: platform-packages/solopdf-cli-${{ matrix.name }}
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Upload artifacts
+      - name: Upload platform artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.name }}
-          path: |
-            rust-core/*.node
-            rust-core/index.js
-            rust-core/index.d.ts
+          name: platform-${{ matrix.settings.platform }}
+          path: platform-packages/solopdf-cli-${{ matrix.settings.platform }}/
 
-  publish-main:
+  publish-main-package:
+    needs: build-platform-binaries
     runs-on: ubuntu-latest
     name: Publish Main Package
-    needs: build-binaries
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: "10.13.1"
+          version: latest
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: "20"
           cache: "pnpm"
           cache-dependency-path: "node-wrapper/pnpm-lock.yaml"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Download Linux binary for local testing
+      - name: Download platform artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binary-linux-x64-gnu
-          path: ./downloaded-artifacts
+          path: artifacts
 
-      - name: Verify and setup downloaded files
+      - name: Setup platform binaries for main package
         run: |
-          echo "=== Downloaded artifacts ==="
-          ls -la downloaded-artifacts/ || echo "downloaded-artifacts directory not found"
-          echo "=== Looking for all .node files ==="
-          find . -name "*.node" -type f
-
-          # Ensure rust-core directory exists
+          # Create rust-core directory
           mkdir -p rust-core
-
-          # Copy files to expected location and handle platform-specific naming
-          if [ -f "downloaded-artifacts/index.js" ] && [ -f "downloaded-artifacts/index.d.ts" ]; then
-            echo "✓ Found basic files in downloaded-artifacts/"
-            cp downloaded-artifacts/index.js rust-core/
-            cp downloaded-artifacts/index.d.ts rust-core/
-            
-            # Find and rename the platform-specific .node file
-            NODE_FILE=$(find downloaded-artifacts -name "*.node" -type f | head -1)
-            if [ -n "$NODE_FILE" ]; then
-              echo "✓ Found .node file: $NODE_FILE"
-              cp "$NODE_FILE" rust-core/index.node
+          
+          # Copy platform-specific binaries from artifacts
+          echo "Available artifacts:"
+          ls -la artifacts/ || echo "No artifacts found"
+          
+          for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do
+            ARTIFACT_DIR="artifacts/platform-$platform"
+            if [ -d "$ARTIFACT_DIR" ]; then
+              echo "Processing $platform..."
+              ls -la "$ARTIFACT_DIR/"
+              
+              if [ -f "$ARTIFACT_DIR/index.node" ]; then
+                cp "$ARTIFACT_DIR/index.node" "rust-core/index.$platform.node"
+                SIZE=$(stat -c%s "rust-core/index.$platform.node" 2>/dev/null || stat -f%z "rust-core/index.$platform.node")
+                echo "✅ Copied $platform binary ($SIZE bytes)"
+              fi
             else
-              echo "✗ No .node file found"
-              exit 1
+              echo "⚠️  Artifact not found for $platform"
             fi
-          else
-            echo "✗ Could not find artifacts in expected locations"
-            find downloaded-artifacts -name "*.node" -type f || echo "No .node files found"
-            exit 1
+          done
+          
+          # Use Linux binary as the generic fallback
+          if [ -f "rust-core/index.linux-x64-gnu.node" ]; then
+            cp "rust-core/index.linux-x64-gnu.node" "rust-core/index.node"
+            echo "✅ Linux binary set as generic fallback"
           fi
-
-          echo "=== Final verification ==="
-          [ -f "rust-core/index.node" ] && echo "✓ rust-core/index.node exists" || echo "✗ rust-core/index.node missing"
-          [ -f "rust-core/index.js" ] && echo "✓ rust-core/index.js exists" || echo "✗ rust-core/index.js missing"
-          [ -f "rust-core/index.d.ts" ] && echo "✓ rust-core/index.d.ts exists" || echo "✗ rust-core/index.d.ts missing"
+          
+          # Create the JavaScript wrapper
+          cat > rust-core/index.js << 'EOF'
+          const { createRequire } = require('module');
+          
+          function getPlatform() {
+            const { platform, arch } = process;
+            switch (platform) {
+              case 'win32':
+                return arch === 'x64' ? 'win32-x64-msvc' : `win32-${arch}`;
+              case 'darwin':
+                return arch === 'arm64' ? 'darwin-arm64' : 'darwin-x64';
+              case 'linux':
+                return arch === 'x64' ? 'linux-x64-gnu' : `linux-${arch}`;
+              default:
+                throw new Error(`Unsupported platform: ${platform}-${arch}`);
+            }
+          }
+          
+          const platformName = getPlatform();
+          const require = createRequire(import.meta.url);
+          
+          try {
+            module.exports = require(`./index.${platformName}.node`);
+          } catch (e) {
+            try {
+              module.exports = require('./index.node');
+            } catch (fallbackError) {
+              throw new Error(`Failed to load native binary for ${platformName}: ${fallbackError.message}`);
+            }
+          }
+          EOF
+          
+          cat > rust-core/index.d.ts << 'EOF'
+          export interface SigningOptions {
+            fontSize?: number;
+            color?: string;
+            xPosition?: number;
+            yPosition?: number;
+            pages?: number[];
+            position?: string;
+            rotation?: number;
+            opacity?: number;
+          }
+          
+          export declare function getPageCount(filePath: string): number;
+          export declare function signPdfWithOptions(inputPath: string, outputPath: string, signatureText: string, options?: SigningOptions): void;
+          export declare function getPdfInfoBeforeSigning(filePath: string): any;
+          export declare function getPdfChecksum(filePath: string): string;
+          export declare function generateSigningKeyPair(): string;
+          export declare function getKeyInfoFromJson(keyData: string): any;
+          export declare function signPdfWithKey(inputPath: string, outputPath: string, keyData: string, reason?: string, location?: string, contactInfo?: string): void;
+          export declare function verifyPdfSignature(filePath: string): any;
+          EOF
 
       - name: Install dependencies and build
         working-directory: node-wrapper
