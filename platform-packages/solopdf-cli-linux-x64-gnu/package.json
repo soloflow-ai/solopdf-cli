@@ -1,6 +1,6 @@
 {
   "name": "solopdf-cli-linux-x64-gnu",
-  "version": "0.0.7",
+  "version": "1.0.0",
   "description": "SoloPDF CLI native binary for linux-x64-gnu",
   "main": "index.node",
   "files": ["index.node"],

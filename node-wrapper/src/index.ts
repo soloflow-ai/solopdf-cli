@@ -53,16 +53,33 @@ function parsePageNumbers(pageOption: string, totalPages: number): number[] {
     .sort((a, b) => a - b);
 }
 
-// Get version from package.json
-const packageJsonPath = new URL('../../package.json', import.meta.url);
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+// Get version from package.json with fallback
+let packageVersion = '1.0.0'; // Default fallback version
+try {
+  // First try to read from the package's own package.json
+  const packageJsonPath = new URL('../package.json', import.meta.url);
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  packageVersion = packageJson.version;
+} catch {
+  // Fallback: try the root package.json (for development)
+  try {
+    const alternativePath = new URL('../../package.json', import.meta.url);
+    const packageJson = JSON.parse(fs.readFileSync(alternativePath, 'utf8'));
+    packageVersion = packageJson.version;
+  } catch {
+    console.warn(
+      'Could not read version from package.json, using default:',
+      packageVersion,
+    );
+  }
+}
 
 const program = new Command();
 
 program
   .name('solopdf')
   .description('A CLI tool for PDF operations')
-  .version(packageJson.version);
+  .version(packageVersion);
 
 // Show header only when help is requested or no command is given
 if (
