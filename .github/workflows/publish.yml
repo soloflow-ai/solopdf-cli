@@ -80,13 +80,13 @@ jobs:
           VERSION=$(node -p "require('./node-wrapper/package.json').version")
           PLATFORM="${{ matrix.settings.platform }}"
           PACKAGE_NAME="solopdf-cli-$PLATFORM"
-          
+
           echo "Building platform package: $PACKAGE_NAME v$VERSION"
-          
+
           # Create platform package directory
           mkdir -p "platform-packages/$PACKAGE_NAME"
           cd "platform-packages/$PACKAGE_NAME"
-          
+
           # Create package.json
           node -e "
           const pkg = {
@@ -107,7 +107,7 @@ jobs:
               node: '>=18.0.0'
             }
           };
-          
+
           // Add platform-specific metadata
           switch ('$PLATFORM') {
             case 'win32-x64-msvc':
@@ -127,10 +127,10 @@ jobs:
               pkg.os = ['darwin'];
               break;
           }
-          
+
           require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
-          
+
           # Find and copy the binary
           NODE_FILE=\$(find \"../../rust-core\" -name \"*\${PLATFORM}.node\" -o -name \"index.node\" | head -1)
           if [ -n \"\$NODE_FILE\" ] && [ -f \"\$NODE_FILE\" ]; then
@@ -188,11 +188,11 @@ jobs:
         run: |
           # Create rust-core directory
           mkdir -p rust-core
-          
+
           # Copy platform-specific binaries from artifacts
           echo "Available artifacts:"
           ls -la artifacts/ || echo "No artifacts found"
-          
+
           for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do
             ARTIFACT_DIR="artifacts/platform-$platform"
             if [ -d "$ARTIFACT_DIR" ]; then
@@ -208,17 +208,17 @@ jobs:
               echo "⚠️  Artifact not found for $platform"
             fi
           done
-          
+
           # Use Linux binary as the generic fallback
           if [ -f "rust-core/index.linux-x64-gnu.node" ]; then
             cp "rust-core/index.linux-x64-gnu.node" "rust-core/index.node"
             echo "✅ Linux binary set as generic fallback"
           fi
-          
+
           # Create the JavaScript wrapper
           cat > rust-core/index.js << 'EOF'
           const { createRequire } = require('module');
-          
+
           function getPlatform() {
             const { platform, arch } = process;
             switch (platform) {
@@ -232,10 +232,10 @@ jobs:
                 throw new Error(`Unsupported platform: ${platform}-${arch}`);
             }
           }
-          
+
           const platformName = getPlatform();
           const require = createRequire(import.meta.url);
-          
+
           try {
             module.exports = require(`./index.${platformName}.node`);
           } catch (e) {
@@ -246,7 +246,7 @@ jobs:
             }
           }
           EOF
-          
+
           cat > rust-core/index.d.ts << 'EOF'
           export interface SigningOptions {
             fontSize?: number;
@@ -258,7 +258,7 @@ jobs:
             rotation?: number;
             opacity?: number;
           }
-          
+
           export declare function getPageCount(filePath: string): number;
           export declare function signPdfWithOptions(inputPath: string, outputPath: string, signatureText: string, options?: SigningOptions): void;
           export declare function getPdfInfoBeforeSigning(filePath: string): any;

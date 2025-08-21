@@ -73,11 +73,11 @@ jobs:
           VERSION=$(node -p "require('./node-wrapper/package.json').version")
           PLATFORM="${{ matrix.settings.platform }}"
           PACKAGE_NAME="solopdf-cli-$PLATFORM"
-          
+
           # Create platform package directory
           mkdir -p "platform-packages/$PACKAGE_NAME"
           cd "platform-packages/$PACKAGE_NAME"
-          
+
           # Create package.json
           cat > package.json << EOF
           {
@@ -98,7 +98,7 @@ jobs:
               "node": ">=18.0.0"
             },
           EOF
-          
+
           # Add platform-specific CPU/OS metadata
           case "$PLATFORM" in
             "win32-x64-msvc")
@@ -118,9 +118,9 @@ jobs:
               echo '    "os": ["darwin"]' >> package.json
               ;;
           esac
-          
+
           echo "  }" >> package.json
-          
+
           # Find and copy the binary
           NODE_FILE=$(find "../../rust-core" -name "*${PLATFORM}.node" -o -name "index.node" | head -1)
           if [ -n "$NODE_FILE" ] && [ -f "$NODE_FILE" ]; then
@@ -168,10 +168,10 @@ jobs:
         run: |
           # Create rust-core directory if it doesn't exist
           mkdir -p rust-core
-          
+
           # Copy platform-specific binaries for main package
           ls -la artifacts/ || echo "No artifacts found"
-          
+
           # Copy each platform's binary to rust-core
           for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do
             ARTIFACT_DIR="artifacts/binary-$platform/solopdf-cli-$platform"
@@ -182,17 +182,17 @@ jobs:
               echo "⚠️  Platform binary not found: $ARTIFACT_DIR/index.node"
             fi
           done
-          
+
           # Use Linux binary as the generic fallback
           if [ -f "rust-core/index.linux-x64-gnu.node" ]; then
             cp "rust-core/index.linux-x64-gnu.node" "rust-core/index.node"
             echo "✅ Linux binary set as generic fallback"
           fi
-          
+
           # Create the JavaScript wrapper and TypeScript definitions
           cat > rust-core/index.js << 'EOF'
           const { createRequire } = require('module');
-          
+
           function getPlatform() {
             const { platform, arch } = process;
             switch (platform) {
@@ -206,10 +206,10 @@ jobs:
                 throw new Error(`Unsupported platform: ${platform}-${arch}`);
             }
           }
-          
+
           const platformName = getPlatform();
           const require = createRequire(import.meta.url);
-          
+
           try {
             module.exports = require(`./index.${platformName}.node`);
           } catch (e) {
@@ -220,7 +220,7 @@ jobs:
             }
           }
           EOF
-          
+
           cat > rust-core/index.d.ts << 'EOF'
           export interface SigningOptions {
             fontSize?: number;
@@ -232,7 +232,7 @@ jobs:
             rotation?: number;
             opacity?: number;
           }
-          
+
           export declare function getPageCount(filePath: string): number;
           export declare function signPdfWithOptions(inputPath: string, outputPath: string, signatureText: string, options?: SigningOptions): void;
           export declare function getPdfInfoBeforeSigning(filePath: string): any;
