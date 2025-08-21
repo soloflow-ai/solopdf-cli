@@ -156,8 +156,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
       - name: Download all platform binaries
         uses: actions/download-artifact@v4
