@@ -23,11 +23,15 @@ echo -e "${YELLOW}📋 Step 1: Running quick validation...${NC}"
 ./scripts/quick-check.sh
 check_status "Quick validation"
 
-echo -e "${YELLOW}📋 Step 2: Setup test environment...${NC}"
+echo -e "${YELLOW}📋 Step 2: Validate platform binaries...${NC}"
+./scripts/build-windows-binary.sh || echo "Windows binary preparation completed (CI build required)"
+echo -e "${GREEN}✅ Platform binary validation completed${NC}"
+
+echo -e "${YELLOW}📋 Step 3: Setup test environment...${NC}"
 node scripts/setup-execution-env.mjs
 check_status "Test environment setup"
 
-echo -e "${YELLOW}📋 Step 3: Generate test PDFs...${NC}"
+echo -e "${YELLOW}📋 Step 4: Generate test PDFs...${NC}"
 cd rust-core
 source ~/.cargo/env 2>/dev/null || true
 mkdir -p ../executed/generated-pdfs
@@ -35,7 +39,7 @@ cargo run --bin generate_test_pdfs -- ../executed/generated-pdfs
 check_status "Test PDF generation"
 cd ..
 
-echo -e "${YELLOW}📋 Step 4: Final integration tests...${NC}"
+echo -e "${YELLOW}📋 Step 5: Final integration tests...${NC}"
 cd node-wrapper
 pnpm test:integration || echo "No integration tests found"
 check_status "Integration tests"

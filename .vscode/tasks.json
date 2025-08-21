@@ -65,6 +65,20 @@
     {
       "label": "Build Windows Binary",
       "type": "shell",
+      "command": "./scripts/build-windows-binary.sh",
+      "group": "build",
+      "isBackground": false,
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Windows Binary (Direct)",
+      "type": "shell",
       "command": "bash",
       "args": [
         "-c",
@@ -243,7 +257,80 @@
       "problemMatcher": []
     },
 
-    // === Platform Package Tasks ===
+    // === Platform Package Monitoring & Validation Tasks ===
+    {
+      "label": "Monitor Platform Binaries",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🔍 COMPREHENSIVE PLATFORM BINARY MONITORING' && echo '═════════════════════════════════════════════' && echo '' && for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do echo \"📦 Platform: $platform\"; package_dir=\"platform-packages/solopdf-cli-$platform\"; echo \"   📁 Directory: $package_dir\"; if [ -d \"$package_dir\" ]; then echo \"   ✅ EXISTS\"; if [ -f \"$package_dir/index.node\" ]; then size=$(stat -c%s \"$package_dir/index.node\" 2>/dev/null || stat -f%z \"$package_dir/index.node\" 2>/dev/null || echo '0'); echo \"   🔧 Binary: index.node ($size bytes)\"; if [ \"$size\" -gt 2000000 ]; then echo \"   ✅ STATUS: REAL BINARY ($(echo \"scale=1; $size/1024/1024\" | bc 2>/dev/null || awk \"BEGIN{printf \\\"%.1f\\\", $size/1024/1024}\")MB)\"; file \"$package_dir/index.node\" 2>/dev/null | sed 's/^/      📋 Type: /'; elif [ \"$size\" -gt 1000 ]; then echo \"   ⚠️  STATUS: SMALL BINARY ($size bytes - may be incomplete)\"; head -c 50 \"$package_dir/index.node\" 2>/dev/null | sed 's/^/      📄 Content: /'; elif [ \"$size\" -gt 0 ]; then echo \"   ⚠️  STATUS: PLACEHOLDER ($size bytes)\"; head -c 100 \"$package_dir/index.node\" 2>/dev/null | sed 's/^/      📄 Content: /'; else echo \"   ❌ STATUS: EMPTY FILE (0 bytes)\"; fi; else echo \"   ❌ Binary: MISSING index.node\"; fi; if [ -f \"$package_dir/package.json\" ]; then version=$(node -e \"console.log(require('./$package_dir/package.json').version)\" 2>/dev/null || echo 'ERROR'); cpu=$(node -e \"console.log(JSON.stringify(require('./$package_dir/package.json').cpu))\" 2>/dev/null || echo 'ERROR'); os=$(node -e \"console.log(JSON.stringify(require('./$package_dir/package.json').os))\" 2>/dev/null || echo 'ERROR'); echo \"   📋 package.json: v$version (cpu:$cpu, os:$os)\"; else echo \"   ❌ package.json: MISSING\"; fi; else echo \"   ❌ MISSING DIRECTORY\"; fi; echo ''; done && echo '═════════════════════════════════════════════' && echo '🎯 SUMMARY:' && real_binaries=0; placeholder_files=0; missing_files=0; for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do if [ -f \"platform-packages/solopdf-cli-$platform/index.node\" ]; then size=$(stat -c%s \"platform-packages/solopdf-cli-$platform/index.node\" 2>/dev/null || stat -f%z \"platform-packages/solopdf-cli-$platform/index.node\" 2>/dev/null || echo '0'); if [ \"$size\" -gt 2000000 ]; then real_binaries=$((real_binaries + 1)); elif [ \"$size\" -gt 0 ]; then placeholder_files=$((placeholder_files + 1)); else missing_files=$((missing_files + 1)); fi; else missing_files=$((missing_files + 1)); fi; done; echo \"✅ Real Binaries: $real_binaries/4\"; echo \"⚠️  Placeholders: $placeholder_files/4\"; echo \"❌ Missing: $missing_files/4\"; if [ \"$real_binaries\" -eq 4 ]; then echo '🎉 ALL PLATFORMS READY FOR PRODUCTION!'; elif [ \"$real_binaries\" -gt 0 ]; then echo '⚠️  PARTIAL BUILD - Some platforms need CI compilation'; else echo '❌ NO REAL BINARIES - Run build script or CI'; fi"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Continuous Binary Monitoring",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🔄 STARTING CONTINUOUS PLATFORM BINARY MONITORING' && echo 'Press Ctrl+C to stop' && echo '' && while true; do clear; date; echo ''; echo '🔍 Platform Binary Status:'; for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do package_dir=\"platform-packages/solopdf-cli-$platform\"; if [ -f \"$package_dir/index.node\" ]; then size=$(stat -c%s \"$package_dir/index.node\" 2>/dev/null || stat -f%z \"$package_dir/index.node\" 2>/dev/null || echo '0'); if [ \"$size\" -gt 2000000 ]; then echo \"✅ $platform: $(echo \"scale=1; $size/1024/1024\" | bc 2>/dev/null || awk \"BEGIN{printf \\\"%.1f\\\", $size/1024/1024}\")MB (READY)\"; elif [ \"$size\" -gt 0 ]; then echo \"⚠️  $platform: ${size}B (placeholder)\"; else echo \"❌ $platform: 0B (empty)\"; fi; else echo \"❌ $platform: MISSING\"; fi; done; echo ''; echo '🕐 Next check in 10 seconds...'; sleep 10; done"
+      ],
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Binary Integrity",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🔍 BINARY INTEGRITY VALIDATION' && echo '═══════════════════════════════' && echo '' && for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do package_dir=\"platform-packages/solopdf-cli-$platform\"; binary_file=\"$package_dir/index.node\"; echo \"📦 Validating: $platform\"; if [ -f \"$binary_file\" ]; then size=$(stat -c%s \"$binary_file\" 2>/dev/null || stat -f%z \"$binary_file\" 2>/dev/null || echo '0'); echo \"   📏 Size: $size bytes\"; if [ \"$size\" -gt 2000000 ]; then echo \"   🔍 File Analysis:\"; file_info=$(file \"$binary_file\" 2>/dev/null || echo 'Cannot determine type'); echo \"      📋 Type: $file_info\"; if echo \"$file_info\" | grep -q 'ELF.*shared object'; then echo '      ✅ Valid Linux ELF binary'; elif echo \"$file_info\" | grep -q 'PE32.*executable'; then echo '      ✅ Valid Windows PE binary'; elif echo \"$file_info\" | grep -q 'Mach-O.*bundle'; then echo '      ✅ Valid macOS Mach-O binary'; else echo '      ⚠️  Unknown binary format'; fi; if command -v ldd >/dev/null 2>&1 && [ \"$platform\" = 'linux-x64-gnu' ]; then echo '      🔗 Dependencies:'; ldd \"$binary_file\" 2>/dev/null | head -5 | sed 's/^/         /'; fi; checksum=$(md5sum \"$binary_file\" 2>/dev/null | cut -d' ' -f1 || md5 \"$binary_file\" 2>/dev/null | cut -d' ' -f4 || echo 'N/A'); echo \"      🔐 MD5: $checksum\"; elif [ \"$size\" -gt 0 ]; then echo '      ⚠️  Placeholder file detected'; echo '      📄 Content:'; head -c 100 \"$binary_file\" 2>/dev/null | sed 's/^/         /'; else echo '      ❌ Empty file'; fi; else echo '   ❌ Binary file missing'; fi; echo ''; done && echo '🎯 Validation Complete'"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Status Dashboard",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '📊 SOLOPDF-CLI BUILD STATUS DASHBOARD' && echo '═══════════════════════════════════════════════' && echo \"📅 $(date)\" && echo \"💻 Host: $(uname -a | cut -d' ' -f1-3)\" && echo '' && echo '🏗️  BUILD SYSTEM STATUS:' && if [ -x scripts/build-platform-packages.sh ]; then echo '✅ Build script executable'; else echo '❌ Build script not executable'; fi; if [ -d rust-core ]; then echo '✅ Rust core directory exists'; if [ -f rust-core/Cargo.toml ]; then echo '✅ Cargo.toml found'; else echo '❌ Cargo.toml missing'; fi; else echo '❌ Rust core directory missing'; fi; if [ -d node-wrapper ]; then echo '✅ Node wrapper directory exists'; if [ -f node-wrapper/package.json ]; then version=$(node -e \"console.log(require('./node-wrapper/package.json').version)\" 2>/dev/null || echo 'ERROR'); echo \"✅ Package version: $version\"; else echo '❌ Node package.json missing'; fi; else echo '❌ Node wrapper directory missing'; fi; echo '' && echo '📦 PLATFORM PACKAGES STATUS:' && total_platforms=4; ready_platforms=0; for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do package_dir=\"platform-packages/solopdf-cli-$platform\"; status=\"❌ NOT READY\"; size=0; if [ -f \"$package_dir/index.node\" ]; then size=$(stat -c%s \"$package_dir/index.node\" 2>/dev/null || stat -f%z \"$package_dir/index.node\" 2>/dev/null || echo '0'); if [ \"$size\" -gt 2000000 ]; then status=\"✅ READY\"; ready_platforms=$((ready_platforms + 1)); elif [ \"$size\" -gt 0 ]; then status=\"⚠️  PLACEHOLDER\"; fi; fi; echo \"   $platform: $status (${size}B)\"; done; echo '' && echo \"🎯 READINESS: $ready_platforms/$total_platforms platforms ready\" && if [ \"$ready_platforms\" -eq \"$total_platforms\" ]; then echo '🎉 ALL PLATFORMS READY FOR PRODUCTION DEPLOY!'; echo '🚀 Next steps:'; echo '   1. Run tests: npm run test'; echo '   2. Publish: npm publish'; elif [ \"$ready_platforms\" -gt 0 ]; then echo '⚠️  PARTIAL READINESS - Cross-compilation needed'; echo '🔄 Next steps:'; echo '   1. Push to GitHub for CI builds'; echo '   2. Wait for cross-platform binaries'; echo '   3. Download artifacts and rebuild packages'; else echo '❌ NO PLATFORMS READY'; echo '🛠️  Next steps:'; echo '   1. Run: ./scripts/build-platform-packages.sh'; echo '   2. Check for build errors'; echo '   3. Install cross-compilation tools if needed'; fi; echo '' && echo '🔧 DEVELOPMENT STATUS:' && if [ -f node-wrapper/dist/index.js ]; then echo '✅ CLI built and ready'; else echo '❌ CLI needs building'; fi; if command -v cargo >/dev/null 2>&1; then echo \"✅ Rust toolchain: $(cargo --version | cut -d' ' -f2)\"; else echo '❌ Rust toolchain not installed'; fi; if command -v node >/dev/null 2>&1; then echo \"✅ Node.js: $(node --version)\"; else echo '❌ Node.js not installed'; fi"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Test Platform Binary Loading",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🧪 PLATFORM BINARY LOADING TESTS' && echo '═══════════════════════════════════' && echo '' && cd node-wrapper || { echo '❌ Cannot access node-wrapper directory'; exit 1; }; if [ ! -f dist/platform-loader.js ]; then echo '❌ Platform loader not built - building now...'; cd .. && npm run build >/dev/null 2>&1 && cd node-wrapper || { echo '❌ Build failed'; exit 1; }; fi; echo '🔧 Testing platform loader module:'; if node -e \"try { const mod = require('./dist/platform-loader.js'); console.log('✅ Module loaded successfully'); console.log('📋 Available functions:', Object.keys(mod).length); Object.keys(mod).forEach(fn => console.log('   -', fn)); } catch(e) { console.error('❌ Module load failed:', e.message); process.exit(1); }\" 2>/dev/null; then echo '✅ Platform loader working'; else echo '❌ Platform loader failed'; fi; echo '' && echo '🎯 Testing CLI functionality:' && if [ -f dist/index.js ]; then echo '🔧 CLI version test:'; if timeout 10s node dist/index.js --version 2>/dev/null; then echo '✅ CLI responding correctly'; else echo '❌ CLI not responding or timed out'; fi; echo '🔧 CLI help test:'; if timeout 5s node dist/index.js --help >/dev/null 2>&1; then echo '✅ CLI help working'; else echo '❌ CLI help failed'; fi; else echo '❌ CLI not built'; fi; echo '' && echo '📊 Current platform detection:'; node -e \"console.log('Platform:', process.platform + '-' + process.arch); console.log('Node.js:', process.version);\" 2>/dev/null || echo '❌ Cannot detect platform'; echo '' && echo '🎯 Binary loading strategy test:'; expected_platform=$(node -e \"const { platform, arch } = process; switch (platform) { case 'win32': console.log(arch === 'x64' ? 'win32-x64-msvc' : 'win32-' + arch); break; case 'darwin': console.log(arch === 'arm64' ? 'darwin-arm64' : 'darwin-x64'); break; case 'linux': console.log(arch === 'x64' ? 'linux-x64-gnu' : 'linux-' + arch); break; default: console.log('unknown'); }\" 2>/dev/null); echo \"Expected platform package: solopdf-cli-$expected_platform\"; if [ -f \"../platform-packages/solopdf-cli-$expected_platform/index.node\" ]; then size=$(stat -c%s \"../platform-packages/solopdf-cli-$expected_platform/index.node\" 2>/dev/null || stat -f%z \"../platform-packages/solopdf-cli-$expected_platform/index.node\" 2>/dev/null || echo '0'); if [ \"$size\" -gt 1000000 ]; then echo \"✅ Platform binary available (${size} bytes)\"; else echo \"⚠️  Platform binary is placeholder (${size} bytes)\"; fi; else echo \"❌ Platform binary missing\"; fi"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "dependsOn": ["Build All"],
+      "problemMatcher": []
+    },
     {
       "label": "Build Platform Packages",
       "type": "shell",
@@ -279,7 +366,7 @@
         "-c",
         "echo '🧪 Testing platform packages...' && for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do echo \"Testing solopdf-cli-$platform...\"; if [ -f \"platform-packages/solopdf-cli-$platform/index.node\" ]; then size=$(stat -c%s \"platform-packages/solopdf-cli-$platform/index.node\" 2>/dev/null || stat -f%z \"platform-packages/solopdf-cli-$platform/index.node\" 2>/dev/null || echo '0'); if [ \"$size\" -gt 1000000 ]; then echo \"✅ $platform: $(echo \"scale=1; $size/1024/1024\" | bc 2>/dev/null || awk \"BEGIN{printf \\\"%.1f\\\", $size/1024/1024}\")MB\"; else echo \"⚠️  $platform: ${size}B (placeholder)\"; fi; else echo \"❌ $platform: missing\"; fi; done"
       ],
-      "group": "test", 
+      "group": "test",
       "isBackground": false,
       "dependsOn": ["Build Platform Packages"],
       "problemMatcher": []
@@ -299,19 +386,56 @@
     },
     {
       "label": "Validate Platform Packages",
-      "type": "shell", 
+      "type": "shell",
       "command": "bash",
       "args": [
         "-c",
         "echo '📦 Validating platform packages...' && for platform in linux-x64-gnu win32-x64-msvc darwin-x64 darwin-arm64; do echo \"Validating solopdf-cli-$platform...\"; package_dir=\"platform-packages/solopdf-cli-$platform\"; if [ -f \"$package_dir/package.json\" ] && [ -f \"$package_dir/index.node\" ]; then echo \"✅ Structure OK\"; node -e \"const pkg = require('./$package_dir/package.json'); console.log('  Name:', pkg.name); console.log('  Version:', pkg.version); console.log('  CPU:', pkg.cpu); console.log('  OS:', pkg.os);\"; else echo \"❌ Missing files\"; fi; echo ''; done"
       ],
       "group": "test",
-      "isBackground": false, 
+      "isBackground": false,
       "dependsOn": ["Build Platform Packages"],
       "problemMatcher": []
     },
 
-    // === Development Tasks ===
+    // === CI/CD & GitHub Actions Monitoring ===
+    {
+      "label": "Check GitHub Actions Status",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🔍 GITHUB ACTIONS BUILD STATUS CHECK' && echo '═══════════════════════════════════════════' && echo '' && if command -v gh >/dev/null 2>&1; then echo '✅ GitHub CLI available - checking recent runs:'; echo ''; gh run list --limit 5 --json status,conclusion,createdAt,name,headBranch 2>/dev/null | node -e \"const runs = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')); runs.forEach(run => { const date = new Date(run.createdAt).toLocaleString(); const status = run.conclusion === 'success' ? '✅' : run.conclusion === 'failure' ? '❌' : run.status === 'in_progress' ? '🔄' : '⚠️'; console.log(\\`   \\${status} \\${run.name} (\\${run.headBranch}) - \\${date}\\`); });\" 2>/dev/null || echo '   ⚠️  Could not fetch recent runs'; else echo '⚠️  GitHub CLI not available - install with: sudo apt install gh'; fi; echo ''; echo '🔧 LOCAL BUILD ARTIFACTS CHECK:'; if [ -d .git ]; then echo '✅ Git repository detected'; latest_commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown'); echo \"   📝 Latest commit: $latest_commit\"; branch=$(git branch --show-current 2>/dev/null || echo 'unknown'); echo \"   🌿 Current branch: $branch\"; if git status --porcelain 2>/dev/null | grep -q .; then echo '   ⚠️  Working directory has uncommitted changes'; else echo '   ✅ Working directory clean'; fi; else echo '❌ Not a git repository'; fi; echo ''; echo '🎯 CROSS-PLATFORM BUILD REQUIREMENTS:'; echo '   📋 Required for production:'; echo '      • Windows x64: GitHub Actions with windows-latest'; echo '      • macOS Intel: GitHub Actions with macos-13'; echo '      • macOS ARM: GitHub Actions with macos-14'; echo '      • Linux x64: ✅ Available locally'; echo ''; echo '💡 NEXT STEPS:'; if [ -f .github/workflows/build-binaries.yml ]; then echo '   ✅ Build workflow exists'; else echo '   ❌ Build workflow missing'; fi; if [ -f .github/workflows/publish.yml ]; then echo '   ✅ Publish workflow exists'; else echo '   ❌ Publish workflow missing'; fi; echo '   🚀 To trigger cross-platform builds:'; echo '      1. Commit changes: git add -A && git commit -m \"trigger builds\"'; echo '      2. Push to GitHub: git push origin main'; echo '      3. Monitor at: https://github.com/soloflow-ai/solopdf-cli/actions'"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Full Build Validation Pipeline",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Build Status Dashboard",
+        "Monitor Platform Binaries",
+        "Validate Binary Integrity",
+        "Test Platform Binary Loading",
+        "Check GitHub Actions Status"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
     {
       "label": "Watch Rust Build",
       "type": "shell",
@@ -409,7 +533,7 @@
     },
     {
       "label": "Full Platform Pipeline",
-      "dependsOrder": "sequence", 
+      "dependsOrder": "sequence",
       "dependsOn": [
         "Full CI Pipeline",
         "Build Platform Packages",
