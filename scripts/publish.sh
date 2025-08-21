@@ -63,14 +63,67 @@ if [[ $VERSION_BUMP != "current" ]]; then
     NEW_VERSION=$(node -p "require('./package.json').version")
     cd ..
     
-    # Update root package.json to match
+    # Update package.json to match version
     node -e "
         const fs = require('fs');
-        const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
-        pkg.version = '$NEW_VERSION';
-        fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+        const pkgFile = './package.json';
+        const pkg = JSON.parse(fs.readFileSync(pkgFile, 'utf8'));
+        pkg.version = '${PUBLISH_VERSION}';
+        fs.writeFileSync(pkgFile, JSON.stringify(pkg, null, 2) + '\n');
     "
-    
+
+    # Update publish.yml to match version
+    node -e "
+        const fs = require('fs');
+        const ymlFile = './.github/workflows/publish.yml';
+        const yml = fs.readFileSync(ymlFile, 'utf8');
+        const newYml = yml.replace(/version: '.*'/, `version: '${PUBLISH_VERSION}'`);
+        fs.writeFileSync(ymlFile, newYml);
+    "
+
+     # Update rust-core README.md to match version
+    node -e "
+        const fs = require('fs');
+        const f = fs.readFileSync('./rust-core/README.md', 'utf8');
+        const newF = f.replace(/Version: .*/, `Version: ${PUBLISH_VERSION}`);
+        fs.writeFileSync('./rust-core/README.md', newF);
+    "
+
+    # Update node-wrapper README.md to match version
+    node -e "
+        const fs = require('fs');
+        const f = fs.readFileSync('./node-wrapper/README.md', 'utf8');
+        const newF = f.replace(/Version: .*/, `Version: ${PUBLISH_VERSION}`);
+        fs.writeFileSync('./node-wrapper/README.md', newF);
+    "
+
+    # Update platform packages package.json to match version
+    node -e "
+        const fs = require('fs');
+        const pkgFile = './platform/packages/package.json';
+        const pkg = JSON.parse(fs.readFileSync(pkgFile, 'utf8'));
+        pkg.version = '${PUBLISH_VERSION}';
+        fs.writeFileSync(pkgFile, JSON.stringify(pkg, null, 2) + '\n');
+    "
+
+    # Update index.ts to match the default version
+    node -e "
+        const fs = require('fs');
+        const f = fs.readFileSync('./node-wrapper/src/index.ts', 'utf8');
+        const newF = f.replace(/Version: .*/, `Version: ${PUBLISH_VERSION}`);
+        fs.writeFileSync('./node-wrapper/src/index.ts', newF);
+    "
+
+    # Update tasks.json to match version
+    node -e "
+        const fs = require('fs');
+        const f = fs.readFileSync('./.vscode/tasks.json', 'utf8');
+        const newF = f.replace(/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+\"/, `\"version\": \"${NEW_VERSION}\"`);
+        fs.writeFileSync('./.vscode/tasks.json', newF);
+    "
+
+   
+
     echo -e "${GREEN}✅ Version bumped from ${CURRENT_VERSION} to ${NEW_VERSION}${NC}"
     PUBLISH_VERSION=$NEW_VERSION
 else
