@@ -111,7 +111,7 @@ jobs:
           node -e "
           const pkg = {
             name: 'solopdf-cli-${{ matrix.name }}',
-            version: '0.0.7',
+            version: '1.0.0',
             description: 'SoloPDF CLI native binary for ${{ matrix.name }}',
             main: 'index.node',
             files: ['index.node'],
@@ -134,7 +134,7 @@ jobs:
             # Linux: use find
             NODE_FILE=$(find ../../rust-core -name "*.node" -type f | head -1)
           fi
-          
+
           if [ -n "$NODE_FILE" ] && [ -f "$NODE_FILE" ]; then
             echo "✓ Found .node file: $NODE_FILE"
             cp "$NODE_FILE" index.node

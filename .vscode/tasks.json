@@ -250,7 +250,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "mkdir -p platform-packages && rm -rf platform-packages/* && for target in win32-x64-msvc linux-x64-gnu darwin-x64 darwin-arm64; do mkdir -p platform-packages/solopdf-cli-$target && cd platform-packages/solopdf-cli-$target && echo '{\"name\": \"solopdf-cli-'$target'\", \"version\": \"0.0.3\", \"description\": \"SoloPDF CLI native binary for '$target'\", \"main\": \"index.node\", \"files\": [\"index.node\"], \"license\": \"ISC\"}' > package.json && cd ../..; done"
+        "mkdir -p platform-packages && rm -rf platform-packages/* && for target in win32-x64-msvc linux-x64-gnu darwin-x64 darwin-arm64; do mkdir -p platform-packages/solopdf-cli-$target && cd platform-packages/solopdf-cli-$target && echo '{\"name\": \"solopdf-cli-'$target'\", \"version\": \"1.0.0\", \"description\": \"SoloPDF CLI native binary for '$target'\", \"main\": \"index.node\", \"files\": [\"index.node\"], \"license\": \"ISC\"}' > package.json && cd ../..; done"
       ],
       "group": "build",
       "isBackground": false,
