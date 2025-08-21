@@ -44,8 +44,12 @@ function tryLoadPlatformBinary() {
   // Strategy 2: Try to load platform-specific binary from local rust-core directory
   try {
     const require = createRequire(import.meta.url);
-    const platformSpecificPath = path.join(__dirname, 'rust-core', `index.${platformName}.node`);
-    
+    const platformSpecificPath = path.join(
+      __dirname,
+      'rust-core',
+      `index.${platformName}.node`,
+    );
+
     if (fs.existsSync(platformSpecificPath)) {
       const testModule = require(platformSpecificPath);
       if (testModule && typeof testModule.getPageCount === 'function') {
@@ -53,7 +57,9 @@ function tryLoadPlatformBinary() {
       }
     }
   } catch (platformError) {
-    errors.push(`Platform-specific binary load failed: ${getErrorMessage(platformError)}`);
+    errors.push(
+      `Platform-specific binary load failed: ${getErrorMessage(platformError)}`,
+    );
   }
 
   // Strategy 3: Try to load from generic local rust-core directory (development/local build)

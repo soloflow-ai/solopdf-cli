@@ -2,10 +2,10 @@ name: Build Cross-Platform Binaries
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches: [main]
+    tags: ["v*"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -37,8 +37,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: rust-core/package-lock.json
 
       - name: Setup Rust
@@ -77,8 +77,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: node-wrapper/package-lock.json
 
       - name: Setup pnpm
@@ -98,16 +98,16 @@ jobs:
           cp artifacts/binary-win32-x64-msvc/*.node rust-core/index.win32-x64-msvc.node || true
           cp artifacts/binary-darwin-x64/*.node rust-core/index.darwin-x64.node || true
           cp artifacts/binary-darwin-arm64/*.node rust-core/index.darwin-arm64.node || true
-          
+
           # Ensure we have at least the Linux binary as the generic one
           cp rust-core/index.linux-x64-gnu.node rust-core/index.node
-          
+
           # Create the JS wrapper and TypeScript definitions
           cat > rust-core/index.js << 'EOF'
           const { createRequire } = require('module');
           const { fileURLToPath } = require('url');
           const path = require('path');
-          
+
           function getPlatform() {
             const { platform, arch } = process;
             switch (platform) {
@@ -121,10 +121,10 @@ jobs:
                 throw new Error(`Unsupported platform: ${platform}-${arch}`);
             }
           }
-          
+
           const platformName = getPlatform();
           const require = createRequire(import.meta.url);
-          
+
           try {
             module.exports = require(`./index.${platformName}.node`);
           } catch (e) {
@@ -135,7 +135,7 @@ jobs:
             }
           }
           EOF
-          
+
           cat > rust-core/index.d.ts << 'EOF'
           export interface SigningOptions {
             fontSize?: number;
@@ -147,7 +147,7 @@ jobs:
             rotation?: number;
             opacity?: number;
           }
-          
+
           export declare function getPageCount(filePath: string): number;
           export declare function signPdfWithOptions(inputPath: string, outputPath: string, signatureText: string, options?: SigningOptions): void;
           export declare function getPdfInfoBeforeSigning(filePath: string): any;
