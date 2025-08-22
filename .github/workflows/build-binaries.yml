@@ -287,7 +287,9 @@ jobs:
           
           echo "📊 Final binaries in package:"
           ls -la rust-core/binaries/ || echo "No binaries directory created"
-          ls -la rust-core/*.node || echo "No default binaries found"      - name: Build package
+          ls -la rust-core/*.node || echo "No default binaries found"
+
+      - name: Build package
         working-directory: node-wrapper
         run: pnpm build
 
