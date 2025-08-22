@@ -245,6 +245,25 @@ jobs:
         working-directory: node-wrapper
         run: pnpm install --no-frozen-lockfile
 
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Integrate platform binaries
+        run: |
+          echo "🔄 Integrating platform binaries for testing..."
+          
+          # Copy Linux binary to rust-core for CI testing
+          if [ -f "artifacts/solopdf-cli-linux-x64-gnu/index.node" ]; then
+            cp "artifacts/solopdf-cli-linux-x64-gnu/index.node" "rust-core/index.linux-x64-gnu.node"
+            cp "artifacts/solopdf-cli-linux-x64-gnu/index.node" "rust-core/index.node"
+            echo "✅ Linux binary integrated"
+          else
+            echo "❌ Linux binary not found in artifacts"
+            ls -la artifacts/ || echo "No artifacts found"
+          fi
+
       - name: Build package
         working-directory: node-wrapper
         run: pnpm build
