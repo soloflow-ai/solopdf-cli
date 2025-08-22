@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterEach } from '@jest/globals';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { isBinaryAvailable } from '../test-helpers/binary-check';
 
 // Global fail function for Jest
 declare global {
@@ -11,7 +12,9 @@ declare global {
 // Use current working directory to build test paths
 const testDir = path.resolve('./tests/cli');
 
-describe('CLI Commands', () => {
+const describeWithBinary = isBinaryAvailable() ? describe : describe.skip;
+
+describeWithBinary('CLI Commands', () => {
   const cliPath = path.join(testDir, '../../dist/index.js');
   const samplePdfsDir = path.join(testDir, '../../../sample-pdfs');
   let samplePdfs: string[] = [];

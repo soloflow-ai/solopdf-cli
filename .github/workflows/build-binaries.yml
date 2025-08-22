@@ -256,7 +256,7 @@ jobs:
           echo "📊 Available artifacts:"
           find artifacts/ -name "*.node" 2>/dev/null || echo "No .node files found"
           ls -la artifacts/ || echo "No artifacts directory"
-          
+
           # Copy Linux binary to rust-core for CI testing
           LINUX_BINARY=""
           if [ -f "artifacts/binary-linux-x64-gnu/index.node" ]; then
@@ -264,7 +264,7 @@ jobs:
           elif [ -f "artifacts/binary-linux-x64-gnu/solopdf-cli-linux-x64-gnu/index.node" ]; then
             LINUX_BINARY="artifacts/binary-linux-x64-gnu/solopdf-cli-linux-x64-gnu/index.node"
           fi
-          
+
           if [ -n "$LINUX_BINARY" ] && [ -f "$LINUX_BINARY" ]; then
             cp "$LINUX_BINARY" "rust-core/index.linux-x64-gnu.node"
             cp "$LINUX_BINARY" "rust-core/index.node"
