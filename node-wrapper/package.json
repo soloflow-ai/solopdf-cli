@@ -15,8 +15,8 @@
   "scripts": {
     "build": "npm run copy-rust-core && tsc && npm run finalize-build",
     "build:ci": "npm run copy-rust-core:ci && tsc && npm run finalize-build",
-    "copy-rust-core": "mkdir -p src/rust-core dist/rust-core && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node src/rust-core/ && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node dist/rust-core/ && cp ../rust-core/index.*.node dist/rust-core/ 2>/dev/null || true",
-    "copy-rust-core:ci": "mkdir -p src/rust-core dist/rust-core && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node src/rust-core/ && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node dist/rust-core/ && cp ../rust-core/index.*.node dist/rust-core/ 2>/dev/null || true",
+    "copy-rust-core": "mkdir -p src/rust-core dist/rust-core && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node src/rust-core/ && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node dist/rust-core/ && cp ../rust-core/index.*.node dist/rust-core/ 2>/dev/null || true && cp -r ../rust-core/binaries dist/rust-core/ 2>/dev/null || echo 'No binaries directory found'",
+    "copy-rust-core:ci": "mkdir -p src/rust-core dist/rust-core && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node src/rust-core/ && cp ../rust-core/index.js ../rust-core/index.d.ts ../rust-core/index.node dist/rust-core/ && cp ../rust-core/index.*.node dist/rust-core/ 2>/dev/null || true && cp -r ../rust-core/binaries dist/rust-core/ 2>/dev/null || echo 'No binaries directory found'",
     "finalize-build": "chmod +x dist/index.js && rm -rf src/rust-core",
     "test": "jest --coverage",
     "test:unit": "jest --testPathPatterns=unit",
@@ -69,11 +69,5 @@
     "chalk": "^5.5.0",
     "commander": "^14.0.0",
     "ora": "^8.2.0"
-  },
-  "optionalDependencies": {
-    "solopdf-cli-win32-x64-msvc": "1.3.0",
-    "solopdf-cli-linux-x64-gnu": "1.3.0",
-    "solopdf-cli-darwin-x64": "1.3.0",
-    "solopdf-cli-darwin-arm64": "1.3.0"
   }
 }

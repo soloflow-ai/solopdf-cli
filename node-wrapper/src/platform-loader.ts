@@ -29,19 +29,35 @@ function tryLoadPlatformBinary() {
   const platformName = getPlatform();
   const errors: string[] = [];
 
-  // Strategy 1: Try to load from platform-specific optional dependency
+  // Strategy 1: Try to load from bundled platform-specific binary in binaries/ directory
+  try {
+    const platformBinaryPath = path.join(__dirname, 'rust-core', 'binaries', `index.${platformName}.node`);
+    if (fs.existsSync(platformBinaryPath)) {
+      const require = createRequire(import.meta.url);
+      const platformModule = require(platformBinaryPath);
+      if (platformModule && typeof platformModule.getPageCount === 'function') {
+        return platformModule;
+      }
+    }
+  } catch (firstError) {
+    errors.push(
+      `Bundled platform binary 'binaries/index.${platformName}.node': ${getErrorMessage(firstError)}`,
+    );
+  }
+
+  // Strategy 2: Try to load from optional platform package (fallback)
   try {
     const packageName = `solopdf-cli-${platformName}`;
     const require = createRequire(import.meta.url);
     const platformModule = require(packageName);
     return platformModule;
-  } catch (firstError) {
+  } catch (secondError) {
     errors.push(
-      `Platform package 'solopdf-cli-${platformName}': ${getErrorMessage(firstError)}`,
+      `Platform package 'solopdf-cli-${platformName}': ${getErrorMessage(secondError)}`,
     );
   }
 
-  // Strategy 2: Try to load platform-specific binary from local rust-core directory
+  // Strategy 3: Try to load platform-specific binary from local rust-core directory (legacy location)
   try {
     const require = createRequire(import.meta.url);
     const platformSpecificPath = path.join(
@@ -62,7 +78,7 @@ function tryLoadPlatformBinary() {
     );
   }
 
-  // Strategy 3: Try to load from generic local rust-core directory (development/local build)
+  // Strategy 4: Try to load from generic local rust-core directory (development/local build)
   try {
     const localPath = path.join(__dirname, 'rust-core', 'index.node');
     if (fs.existsSync(localPath)) {
@@ -79,7 +95,7 @@ function tryLoadPlatformBinary() {
     errors.push(`Generic binary load failed: ${getErrorMessage(secondError)}`);
   }
 
-  // Strategy 4: Try the JavaScript wrapper (fallback) - but use dynamic import for ES modules
+  // Strategy 5: Try the JavaScript wrapper (fallback) - but use dynamic import for ES modules
   try {
     const jsWrapperPath = path.join(__dirname, 'rust-core', 'index.js');
     if (fs.existsSync(jsWrapperPath)) {

@@ -250,32 +250,44 @@ jobs:
         with:
           path: artifacts
 
-      - name: Integrate platform binaries
+      - name: Integrate all platform binaries into main package
         run: |
-          echo "🔄 Integrating platform binaries for testing..."
+          echo "🔄 Integrating ALL platform binaries into main package..."
+          
+          # Create rust-core directory structure
+          mkdir -p rust-core/binaries
+          
           echo "📊 Available artifacts:"
-          find artifacts/ -name "*.node" 2>/dev/null || echo "No .node files found"
-          ls -la artifacts/ || echo "No artifacts directory"
-
-          # Copy Linux binary to rust-core for CI testing
-          LINUX_BINARY=""
-          if [ -f "artifacts/binary-linux-x64-gnu/index.node" ]; then
-            LINUX_BINARY="artifacts/binary-linux-x64-gnu/index.node"
-          elif [ -f "artifacts/binary-linux-x64-gnu/solopdf-cli-linux-x64-gnu/index.node" ]; then
-            LINUX_BINARY="artifacts/binary-linux-x64-gnu/solopdf-cli-linux-x64-gnu/index.node"
+          find artifacts/ -name "*.node" -type f | head -10 || echo "No .node files found"
+          
+          # Copy ALL platform binaries to rust-core/binaries/
+          declare -A PLATFORM_MAP=(
+            ["binary-linux-x64-gnu"]="linux-x64-gnu"
+            ["binary-win32-x64-msvc"]="win32-x64-msvc" 
+            ["binary-darwin-x64"]="darwin-x64"
+            ["binary-darwin-arm64"]="darwin-arm64"
+          )
+          
+          for artifact_dir in "${!PLATFORM_MAP[@]}"; do
+            platform="${PLATFORM_MAP[$artifact_dir]}"
+            if [ -f "artifacts/$artifact_dir/index.node" ]; then
+              cp "artifacts/$artifact_dir/index.node" "rust-core/binaries/index.$platform.node"
+              echo "✅ Integrated $platform: $(stat -c%s "rust-core/binaries/index.$platform.node" 2>/dev/null || stat -f%z "rust-core/binaries/index.$platform.node") bytes"
+            else
+              echo "❌ Binary not found: artifacts/$artifact_dir/index.node"
+            fi
+          done
+          
+          # Set default binary (Linux for CI compatibility)
+          if [ -f "rust-core/binaries/index.linux-x64-gnu.node" ]; then
+            cp "rust-core/binaries/index.linux-x64-gnu.node" "rust-core/index.node"
+            cp "rust-core/binaries/index.linux-x64-gnu.node" "rust-core/index.linux-x64-gnu.node"
+            echo "✅ Set Linux binary as default"
           fi
-
-          if [ -n "$LINUX_BINARY" ] && [ -f "$LINUX_BINARY" ]; then
-            cp "$LINUX_BINARY" "rust-core/index.linux-x64-gnu.node"
-            cp "$LINUX_BINARY" "rust-core/index.node"
-            echo "✅ Linux binary integrated from: $LINUX_BINARY"
-          else
-            echo "❌ Linux binary not found in expected locations"
-            echo "📊 Detailed artifact listing:"
-            find artifacts/ -type f -name "*" 2>/dev/null | head -10 || echo "No files found in artifacts"
-          fi
-
-      - name: Build package
+          
+          echo "📊 Final binaries in package:"
+          ls -la rust-core/binaries/ || echo "No binaries directory created"
+          ls -la rust-core/*.node || echo "No default binaries found"      - name: Build package
         working-directory: node-wrapper
         run: pnpm build
 
