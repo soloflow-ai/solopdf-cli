@@ -1,7 +1,7 @@
 {
-  "name": "solopdf-cli-linux-x64-gnu",
+  "name": "solopdf-cli-darwin-x64",
   "version": "1.3.0",
-  "description": "SoloPDF CLI native binary for linux-x64-gnu",
+  "description": "SoloPDF CLI native binary for darwin-x64",
   "main": "index.node",
   "files": ["index.node"],
   "license": "ISC",
@@ -15,6 +15,6 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "cpu": ["x64"],
-  "os": ["linux"]
-}
+    "cpu": ["x64"],
+    "os": ["darwin"]
+  }
