@@ -69,11 +69,5 @@
     "chalk": "^5.5.0",
     "commander": "^14.0.0",
     "ora": "^8.2.0"
-  },
-  "optionalDependencies": {
-    "solopdf-cli-win32-x64-msvc": "1.2.0",
-    "solopdf-cli-linux-x64-gnu": "1.2.0",
-    "solopdf-cli-darwin-x64": "1.2.0",
-    "solopdf-cli-darwin-arm64": "1.2.0"
   }
 }
