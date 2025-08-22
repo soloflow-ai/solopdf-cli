@@ -253,15 +253,26 @@ jobs:
       - name: Integrate platform binaries
         run: |
           echo "🔄 Integrating platform binaries for testing..."
+          echo "📊 Available artifacts:"
+          find artifacts/ -name "*.node" 2>/dev/null || echo "No .node files found"
+          ls -la artifacts/ || echo "No artifacts directory"
           
           # Copy Linux binary to rust-core for CI testing
-          if [ -f "artifacts/solopdf-cli-linux-x64-gnu/index.node" ]; then
-            cp "artifacts/solopdf-cli-linux-x64-gnu/index.node" "rust-core/index.linux-x64-gnu.node"
-            cp "artifacts/solopdf-cli-linux-x64-gnu/index.node" "rust-core/index.node"
-            echo "✅ Linux binary integrated"
+          LINUX_BINARY=""
+          if [ -f "artifacts/binary-linux-x64-gnu/index.node" ]; then
+            LINUX_BINARY="artifacts/binary-linux-x64-gnu/index.node"
+          elif [ -f "artifacts/binary-linux-x64-gnu/solopdf-cli-linux-x64-gnu/index.node" ]; then
+            LINUX_BINARY="artifacts/binary-linux-x64-gnu/solopdf-cli-linux-x64-gnu/index.node"
+          fi
+          
+          if [ -n "$LINUX_BINARY" ] && [ -f "$LINUX_BINARY" ]; then
+            cp "$LINUX_BINARY" "rust-core/index.linux-x64-gnu.node"
+            cp "$LINUX_BINARY" "rust-core/index.node"
+            echo "✅ Linux binary integrated from: $LINUX_BINARY"
           else
-            echo "❌ Linux binary not found in artifacts"
-            ls -la artifacts/ || echo "No artifacts found"
+            echo "❌ Linux binary not found in expected locations"
+            echo "📊 Detailed artifact listing:"
+            find artifacts/ -type f -name "*" 2>/dev/null | head -10 || echo "No files found in artifacts"
           fi
 
       - name: Build package
